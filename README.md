@@ -26,7 +26,7 @@ Spói helps universities and colleges efficiently schedule courses, allocate roo
 <table>
   <tr>
     <td>
-      <img src="images/spoi.png" width="25"/>
+      <img src="https://github.com/tprunarsson/spoi/blob/main/images/spoi.png?raw=true" width="25"/>
     </td>
     <td>
       *Spói* is named after the Icelandic word for the Whimbrel, a migratory bird celebrated for its adaptability and clarity — reflecting our mission to make academic scheduling transparent, flexible, and collaborative.
@@ -35,11 +35,3 @@ Spói helps universities and colleges efficiently schedule courses, allocate roo
 </table>
 
 ---
-
-=======
-# spoi
-SPÓI: Scheduling Planning Optimization Interface
-
-![Spói](https://upload.wikimedia.org/wikipedia/commons/f/fc/Whimbrel_-_Numenius_phaeopus_-_Lonsoraefi%2C_Iceland_1.jpg
-)
->>>>>>> 953133f602301a6cf680ba4d5935e3432da30298
