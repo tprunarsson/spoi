@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Spói: Scheduling Planning Optimization Interface
 
 Spói is an interactive optimization platform for the university timetabling problem, built in Python.  
@@ -22,7 +21,7 @@ Spói helps universities and colleges efficiently schedule courses, allocate roo
 - Support for interactive, chat-based timetable adjustment
 
 ---
-
+<img src="https://github.com/tprunarsson/spoi/blob/main/images/spoi.png?raw=true" width="25%"/>
 <table>
   <tr>
     <td>
