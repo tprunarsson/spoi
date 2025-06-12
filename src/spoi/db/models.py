@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, String, Integer, Boolean, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, Text, DateTime, Float
+    Column, Table, Date, String, Integer, Boolean, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, Text, DateTime, Float
 )
 from sqlalchemy.orm import declarative_base, relationship
 import json
@@ -7,7 +7,7 @@ from datetime import datetime
 
 Base = declarative_base()
 
-# -------- Institution, Department, EducationalProgram, FieldOfStudy --------
+# -------- Institution, Department, Program, FieldOfStudy --------
 
 class Institution(Base):
     __tablename__ = 'institutions'
@@ -28,7 +28,7 @@ class Department(Base):
     name = Column(Text)  # JSON language map
     institutionId = Column(String, ForeignKey('institutions.institutionId'))
     institution = relationship('Institution', back_populates='departments')
-    programs = relationship('EducationalProgram', back_populates='department')
+    programs = relationship('Program', back_populates='department')
 
     def set_names(self, en, is_):
         self.name = json.dumps({"en": en, "is": is_})
@@ -37,9 +37,9 @@ class Department(Base):
         data = json.loads(self.name)
         return data.get(lang, "")
 
-class EducationalProgram(Base):
+class Program(Base):
     __tablename__ = 'programs'
-    educationalProgramId = Column(String, primary_key=True)
+    programId = Column(String, primary_key=True)
     name = Column(Text)
     departmentId = Column(String, ForeignKey('departments.departmentId'))
     department = relationship('Department', back_populates='programs')
@@ -47,12 +47,12 @@ class EducationalProgram(Base):
     level = Column(String)
     diplomaType = Column(String)
     fields = relationship('FieldOfStudy', back_populates='program')
-    shortCode = Column(String, nullable=True)      # stuttnumer
-    longCode = Column(String, nullable=True)       # langtnumer
+    shortCode = Column(String, nullable=True)
+    longCode = Column(String, nullable=True)
     institutionId = Column(String, ForeignKey('institutions.institutionId'))
-    curriculumYear = Column(String, nullable=True) # utgafa
-    programType = Column(String, nullable=True)    # gerd
-    isCrossDisciplinary = Column(Boolean, nullable=True) # thverfagleg
+    curriculumYear = Column(String, nullable=True)
+    programType = Column(String, nullable=True)
+    isCrossDisciplinary = Column(Boolean, nullable=True)
 
     def set_names(self, en, is_):
         self.name = json.dumps({"en": en, "is": is_})
@@ -61,15 +61,14 @@ class EducationalProgram(Base):
         data = json.loads(self.name)
         return data.get(lang, "")
 
-
 class FieldOfStudy(Base):
-    __tablename__ = 'fields'
+    __tablename__ = 'fields_of_study'
     fieldOfStudyId = Column(String)
     shortName = Column(String)  
     longName = Column(Text)  
     name = Column(Text)
-    educationalProgramId = Column(String, ForeignKey('programs.educationalProgramId'), nullable=True)
-    program = relationship('EducationalProgram', back_populates='fields')
+    programId = Column(String, ForeignKey('programs.programId'), nullable=True)
+    program = relationship('Program', back_populates='fields')
 
     __table_args__ = (
         PrimaryKeyConstraint('fieldOfStudyId', 'shortName'),
@@ -84,25 +83,38 @@ class FieldOfStudy(Base):
         data = json.loads(self.name or "{}")
         return data.get(lang, "")
 
+class ProgramOffering(Base):
+    __tablename__ = 'program_offerings'
+    programOfferingId = Column(String, primary_key=True)
+    programId = Column(String, ForeignKey('programs.programId'), nullable=False)
+    academicYear = Column(String, nullable=False)  # e.g. '2024'
+    curriculumVersion = Column(String, nullable=True)
+    startDate = Column(Date, nullable=True)
+    endDate = Column(Date, nullable=True)
+    isCurrent = Column(Boolean, default=False)
+
+    program = relationship('Program', back_populates='offerings')
+
+Program.offerings = relationship('ProgramOffering', back_populates='program')
+
 class CurriculumComponent(Base):
     __tablename__ = 'curriculum_components'
     curriculumComponentId = Column(Integer, primary_key=True, autoincrement=True)
     fieldOfStudyId = Column(String)
     shortName = Column(String)
     courseId = Column(String, ForeignKey('courses.courseCode'))
-    courseInstanceId = Column(String, nullable=True)  # from ke_numer_array[0]
+    courseOfferingId = Column(String, nullable=True)
     requirementType = Column(String)
     studyYear = Column(String)
     semester = Column(String)
     curriculumYear = Column(String)
-    groupName = Column(String, nullable=True)     # kjorsvid_heiti
-    order = Column(Integer, nullable=True)        # rodun
-    ects = Column(Float, nullable=True)           # einingar_namsleid_skref
-    notes = Column(Text, nullable=True)           # skref_athugasemd
-    url = Column(String, nullable=True)           # slod_namsleid_skref
-    is_visible = Column(Boolean, nullable=True)   # birta[0] if present
-    not_taught = Column(Boolean, nullable=True)   # ke_ekki_kennt[0] == 't'
-    # Optionally, display names/descriptions (helpful for exports/search/UI):
+    groupName = Column(String, nullable=True)
+    order = Column(Integer, nullable=True)
+    ects = Column(Float, nullable=True)
+    notes = Column(Text, nullable=True)
+    url = Column(String, nullable=True)
+    is_visible = Column(Boolean, nullable=True)
+    not_taught = Column(Boolean, nullable=True)
     name_is = Column(String, nullable=True)
     name_en = Column(String, nullable=True)
     description_is = Column(Text, nullable=True)
@@ -111,7 +123,7 @@ class CurriculumComponent(Base):
     __table_args__ = (
         ForeignKeyConstraint(
             ['fieldOfStudyId', 'shortName'],
-            ['fields.fieldOfStudyId', 'fields.shortName']
+            ['fields_of_study.fieldOfStudyId', 'fields_of_study.shortName']
         ),
     )
 
@@ -124,15 +136,20 @@ class CurriculumComponent(Base):
         m = re.match(r"\d*([A-ZÐÞÆÖÍÁÚÉÝÓ]+[0-9]+[A-Z]*)", self.courseId)
         return m.group(1) if m else self.courseId
 
-# -------- Course, CourseInstance, CourseComponent --------
+# -------- Component (abstract), Course, CourseOffering, ComponentOffering --------
+
+class Component(Base):
+    __tablename__ = 'components'
+    componentId = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String)  # e.g. "Lecture", "Tutorial", "Test"
+    description = Column(Text, nullable=True)
+    # relationship to offerings is optional
 
 class Course(Base):
     __tablename__ = 'courses'
     courseCode = Column(String, primary_key=True)
     canonicalName = Column(Text)  # JSON {"en": ..., "is": ...}
-    # Optionally add more catalog-level info here...
-
-    instances = relationship('CourseInstance', back_populates='course')
+    offerings = relationship('CourseOffering', back_populates='course')
 
     def set_canonical_name(self, en, is_):
         self.canonicalName = json.dumps({"en": en, "is": is_})
@@ -142,24 +159,30 @@ class Course(Base):
         return data.get(lang, "")
 
 
-# ---- CourseInstance (year/term/offering-specific) ----
+# Association table for co-taught course instances
+co_taught_instances = Table(
+    'co_taught_instances',
+    Base.metadata,
+    Column('courseOfferingId', String, ForeignKey('course_offerings.courseOfferingId'), primary_key=True),
+    Column('coTaughtWithId', String, ForeignKey('course_offerings.courseOfferingId'), primary_key=True)
+)
 
-class CourseInstance(Base):
-    __tablename__ = 'course_instances'
-    courseInstanceId = Column(String, primary_key=True)    # e.g. "09101020146"
-    courseCode = Column(String, ForeignKey('courses.courseCode'))  # e.g. "STÆ101G"
-    academicYear = Column(String)        # e.g. "2025"
-    term = Column(String)                # e.g. "6" (map to fall/spring)
-    name = Column(Text)                  # JSON {"en": ..., "is": ...}
-    description = Column(Text)           # JSON {"en": ..., "is": ...}
-    ects = Column(Float)                 # ECTS credits
+class CourseOffering(Base):
+    __tablename__ = 'course_offerings'
+    courseOfferingId = Column(String, primary_key=True)
+    courseCode = Column(String, ForeignKey('courses.courseCode'))
+    academicYear = Column(String)
+    term = Column(String)
+    name = Column(Text)
+    description = Column(Text)
+    ects = Column(Float)
     departmentId = Column(String, ForeignKey('departments.departmentId'))
     department = relationship('Department')
-    teachers = Column(Text)              # JSON list
+    teachers = Column(Text)
     languageOfInstruction = Column(String, nullable=True)
     maxStudents = Column(Integer, nullable=True)
     numberOfEnrolled = Column(Integer, nullable=True)
-    timeslotPattern = Column(Text, nullable=True)           # JSON: [{type, hours, weeks}]
+    timeslotPattern = Column(Text, nullable=True)
     roomPattern = Column(Text, nullable=True)
     numberOfTimeslots = Column(Integer, nullable=True)
     numberOfSessions = Column(Integer, nullable=True)
@@ -167,15 +190,31 @@ class CourseInstance(Base):
     usesOverflowRooms = Column(Boolean, nullable=True)
     preferredBuildings = Column(Text, nullable=True)
     timetableHistory = Column(Text, nullable=True)
-    longCourseCode = Column(String, nullable=True)          # e.g. "5055EÐL107G20156"
+    longCourseCode = Column(String, nullable=True)
+    namsmat = Column(Text, nullable=True)
+    misc = Column(Text, nullable=True)
 
-    # Any other data you want from source, e.g.:
-    namsmat = Column(Text, nullable=True)                   # JSON or plain, grading/method
-    misc = Column(Text, nullable=True)                      # Anything else for debug
+    learningOutcomes = Column(Text)
+    assessment = Column(Text)
+    learningMaterials = Column(Text)
+    prerequisites = Column(Text)
+    modeOfDelivery = Column(String)
+    isCoTaught = Column(Boolean)
+    hasFinalExam = Column(Boolean)
 
     # Relationships
-    course = relationship('Course', back_populates='instances')
-    components = relationship('CourseComponent', back_populates='courseInstance')
+    course = relationship('Course', back_populates='offerings')
+    componentOfferings = relationship('ComponentOffering', back_populates='courseOffering')
+    events = relationship('Event', back_populates='courseOffering')
+
+    # Co-taught (jointly delivered) course instances
+    coTaughtWith = relationship(
+        'CourseOffering',
+        secondary=co_taught_instances,
+        primaryjoin="CourseOffering.courseOfferingId == co_taught_instances.c.courseOfferingId",
+        secondaryjoin="CourseOffering.courseOfferingId == co_taught_instances.c.coTaughtWithId",
+        backref='coTaughtBy'
+    )
 
     def set_names(self, en, is_):
         self.name = json.dumps({"en": en, "is": is_})
@@ -191,38 +230,40 @@ class CourseInstance(Base):
         data = json.loads(self.description or "{}")
         return data.get(lang, "")
 
-# ---- CourseComponent (per instance, per year) ----
-
-class CourseComponent(Base):
-    __tablename__ = 'course_components'
-    componentId = Column(String, primary_key=True)
-    courseInstanceId = Column(String, ForeignKey('course_instances.courseInstanceId'))
-    courseInstance = relationship('CourseInstance', back_populates='components')
+class ComponentOffering(Base):
+    __tablename__ = 'component_offerings'
+    componentOfferingId = Column(String, primary_key=True)
+    courseOfferingId = Column(String, ForeignKey('course_offerings.courseOfferingId'))
+    componentId = Column(String, ForeignKey('components.componentId'))   # <-- Link to abstract type
     type = Column(String)            # e.g. "lecture", "tutorial", "lab", ...
     name = Column(Text)              # JSON language map
+    group = Column(String, nullable=True) 
     teacherIds = Column(Text)        # JSON list
     roomIds = Column(Text)           # JSON list
     timeslotPattern = Column(Text)   # JSON, component-specific
     maxGroupSize = Column(Integer, nullable=True)
     usesOverflowRooms = Column(Boolean, nullable=True)
+    # Relationships
+    courseOffering = relationship('CourseOffering', back_populates='componentOfferings')
+    component = relationship('Component')
+    events = relationship('Event', back_populates='componentOffering')
 
     def set_names(self, en, is_):
         self.name = json.dumps({"en": en, "is": is_})
 
-# -------- Room, Building, Person (Teacher/Student) --------
+# -------- Room, Building, Person --------
 
 class Room(Base):
     __tablename__ = 'rooms'
-    id = Column(Integer, primary_key=True)  # or String if room ids are not always ints
+    roomId = Column(String, primary_key=True)
     name = Column(String)
-    type = Column(String)                 # e.g., "lectureRoom"
-    typeName = Column(String)             # Original "type_name"
+    type = Column(String)
+    typeName = Column(String)
     capacity = Column(Integer)
     examCapacity = Column(Integer)
     examSpecialCapacity = Column(Integer)
-    buildingId = Column(Integer, ForeignKey('buildings.id'))
-    properties = Column(Text)             # JSON for extra info
-
+    buildingId = Column(String, ForeignKey('buildings.buildingId'))
+    properties = Column(Text)
     building = relationship('Building', back_populates='rooms')
 
     def set_properties(self, props: dict):
@@ -235,11 +276,11 @@ class Room(Base):
     
 class Building(Base):
     __tablename__ = 'buildings'
-    id = Column(String, primary_key=True)
+    buildingId = Column(String, primary_key=True)
     name = Column(Text)
     rooms = relationship('Room', back_populates='building')
 
-# -------- Timetable, TimetablePlan, TimetableEvent --------
+# -------- TimetablePlan, Event (Session) --------
 
 class TimetablePlan(Base):
     __tablename__ = 'timetable_plans'
@@ -250,84 +291,86 @@ class TimetablePlan(Base):
     description = Column(Text, nullable=True)
     sourceInfo = Column(String, nullable=True)
 
-    events = relationship('TimetableEvent', back_populates='timetablePlan')
+    events = relationship('Event', back_populates='timetablePlan')
 
-class TimetableEvent(Base):
-    __tablename__ = 'timetable_events'
-    timetableEventId = Column(Integer, primary_key=True, autoincrement=True)
+class Event(Base):
+    __tablename__ = 'events'
+    eventId = Column(Integer, primary_key=True, autoincrement=True)
     timetablePlanId = Column(String, ForeignKey('timetable_plans.timetablePlanId'), nullable=False)
-    courseInstanceId = Column(String, ForeignKey('course_instances.courseInstanceId'), nullable=False)
+    courseOfferingId = Column(String, ForeignKey('course_offerings.courseOfferingId'), nullable=False)
+    componentOfferingId = Column(String, ForeignKey('component_offerings.componentOfferingId'), nullable=True)
+    eventGroupId = Column(String, nullable=True)
 
     start = Column(DateTime, nullable=False)
     end = Column(DateTime, nullable=False)
-    location = Column(String, nullable=True)         # Room, e.g. "VR-2 - V02-157"
-    type = Column(String, nullable=True)             # Lecture, tutorial, exam, etc.
-    group = Column(String, nullable=True)            # e.g. "STÆ104G-20246"
-    note = Column(Text, nullable=True)               # Any remarks/notes
-    teachers = Column(Text, nullable=True)           # JSON list or comma-separated
+    location = Column(String, nullable=True)
+    roomId = Column(String, ForeignKey('rooms.roomId'), nullable=True)
+    type = Column(String, nullable=True)
+    group = Column(String, nullable=True)
+    note = Column(Text, nullable=True)
+    teachers = Column(Text, nullable=True)
 
-    # Relationships
     timetablePlan = relationship('TimetablePlan', back_populates='events')
-    courseInstance = relationship('CourseInstance')  # Not back_populating for simplicity
+    courseOffering = relationship('CourseOffering', back_populates='events')
+    componentOffering = relationship('ComponentOffering', back_populates='events')
+    room = relationship('Room')
 
-    # Optional: add __repr__ for easier debugging
     def __repr__(self):
-        return (f"<TimetableEvent {self.courseInstanceId} {self.start} - {self.end} "
-                f"{self.location} [{self.type}]>")
+        return (f"<Event {self.courseOfferingId} {self.start} - {self.end} "
+                f"{self.location or self.roomId} [{self.type}]>")
+
+# -------- TimeBlock, BlockInterval, CourseOfferingBlock --------
 
 class TimeBlock(Base):
     __tablename__ = 'time_blocks'
     blockId = Column(Integer, primary_key=True, autoincrement=True)
-    description = Column(Text)  # Optional: e.g., "Mon 8:20-9:50 + Wed 10:00-12:20"
+    description = Column(Text)
     intervals = relationship("BlockInterval", back_populates="block")
 
 class BlockInterval(Base):
     __tablename__ = 'block_intervals'
     blockIntervalId = Column(Integer, primary_key=True, autoincrement=True)
     blockId = Column(Integer, ForeignKey('time_blocks.blockId'))
-    day = Column(String)          # 'Monday', 'Tuesday', etc.
-    start_time = Column(String)   # '08:20'
-    end_time = Column(String)     # '09:50'
+    day = Column(String)
+    start_time = Column(String)
+    end_time = Column(String)
     block = relationship("TimeBlock", back_populates="intervals")
 
-class CourseInstanceBlock(Base):
-    __tablename__ = 'course_instance_blocks'
+class CourseOfferingBlock(Base):
+    __tablename__ = 'course_offering_blocks'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    courseInstanceId = Column(String)  # historical course instance ID (e.g., '08213020250')
+    courseOfferingId = Column(String)  # historical course offering ID
     blockId = Column(Integer, ForeignKey('time_blocks.blockId'))
-    roomId = Column(String, ForeignKey('rooms.id'))         # FK to Room.id (String)
-    buildingId = Column(String, ForeignKey('buildings.id')) # FK to Building.id (String)
-    type = Column(String, nullable=True)  # <-- NEW! e.g., "F", "D", "V", "L" (lecture, tutorial, etc.)
-
+    roomId = Column(String, ForeignKey('rooms.roomId'))
+    buildingId = Column(String, ForeignKey('buildings.buildingId'))
+    type = Column(String, nullable=True)
     block = relationship("TimeBlock")
     room = relationship("Room", foreign_keys=[roomId])
     building = relationship("Building", foreign_keys=[buildingId])
 
-# -------- CourseInstanceTeacher, CourseStudentCount, CourseClashCount, Person --------
-class CourseInstanceTeacher(Base):
-    __tablename__ = 'course_instance_teachers'
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    courseInstanceId = Column(String, ForeignKey('course_instances.courseInstanceId'))
-    personId = Column(String, ForeignKey('persons.personId'))
-    role = Column(String)  # e.g., "Umsjónarkennari"
+# -------- CourseOfferingTeacher, CourseStudentCount, CourseClashCount, Person --------
 
-    course_instance = relationship('CourseInstance')
+class CourseOfferingTeacher(Base):
+    __tablename__ = 'course_offering_teachers'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    courseOfferingId = Column(String, ForeignKey('course_offerings.courseOfferingId'))
+    personId = Column(String, ForeignKey('persons.personId'))
+    role = Column(String)
+    course_offering = relationship('CourseOffering')
     person = relationship('Person')
 
 class CourseStudentCount(Base):
     __tablename__ = 'course_student_counts'
-    courseInstanceId = Column(String, ForeignKey('course_instances.courseInstanceId'), primary_key=True)
-    programId = Column(String, ForeignKey('programs.educationalProgramId'), primary_key=True)
-    studyYear = Column(Integer, primary_key=True)
+    courseOfferingId = Column(String, ForeignKey('course_offerings.courseOfferingId'), primary_key=True)
+    programId = Column(String, ForeignKey('programs.programId'), primary_key=True)
     academicYear = Column(String, primary_key=True)
     count = Column(Integer, nullable=False)
 
 class CourseClashCount(Base):
     __tablename__ = 'course_clash_counts'
-    courseA = Column(String, ForeignKey('course_instances.courseInstanceId'), primary_key=True)
-    courseB = Column(String, ForeignKey('course_instances.courseInstanceId'), primary_key=True)
-    programId = Column(String, ForeignKey('programs.educationalProgramId'), primary_key=True)
-    studyYear = Column(Integer, primary_key=True)
+    courseA = Column(String, ForeignKey('course_offerings.courseOfferingId'), primary_key=True)
+    courseB = Column(String, ForeignKey('course_offerings.courseOfferingId'), primary_key=True)
+    programId = Column(String, ForeignKey('programs.programId'), primary_key=True)
     academicYear = Column(String, primary_key=True)
     count = Column(Integer, nullable=False)
 
@@ -335,11 +378,11 @@ class Person(Base):
     __tablename__ = 'persons'
     personId = Column(String, primary_key=True)
     name = Column(Text)              # JSON language map
-    role = Column(String)            # "teacher", "student", "admin", etc.
+    role = Column(String)
     email = Column(String)
     phone = Column(String)
 
-# -------- Example: OptimizationResult Table --------
+# -------- OptimizationResult --------
 
 class OptimizationResult(Base):
     __tablename__ = 'optimization_results'
@@ -347,10 +390,10 @@ class OptimizationResult(Base):
     name = Column(String)
     description = Column(Text)
     createdAt = Column(DateTime)
-    parameters = Column(Text)            # JSON: solver parameters/settings
+    parameters = Column(Text)
     status = Column(String)
-    results = Column(Text)               # JSON: solution data, scores, etc.
+    results = Column(Text)
 
 # --- Relationships setup (if any back_populates needed)
-EducationalProgram.fields = relationship('FieldOfStudy', back_populates='program')
+Program.fields = relationship('FieldOfStudy', back_populates='program')
 FieldOfStudy.curriculumComponents = relationship('CurriculumComponent', back_populates='fieldOfStudy')
