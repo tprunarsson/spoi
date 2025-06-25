@@ -266,7 +266,7 @@ with SessionLocal() as session:
             return offering.programOfferingId
     offering_options = {o.programOfferingId: get_offering_label(o) for o in offerings}
     offering_id = st.sidebar.selectbox(
-        "Námsbraut (útgáfa)", list(offering_options.keys()),
+        "Námsbraut", list(offering_options.keys()),
         format_func=lambda k: offering_options[k], key="offering"
     )
     selected_offering = next((o for o in offerings if o.programOfferingId == offering_id), None)
@@ -293,7 +293,7 @@ with SessionLocal() as session:
     if not available_versions:
         st.warning("No timetable versions found.")
         st.stop()
-    sel_version = st.sidebar.selectbox("Útgáfa (útgáfur fyrir þetta misseri)", available_versions)
+    sel_version = st.sidebar.selectbox("Stundatöflu-útgáfa:", available_versions)
 
     course_name_map = get_course_name_map(session)
     offerings = session.query(CourseOffering).filter(
