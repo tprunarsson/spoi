@@ -1,0 +1,56 @@
+#!/bin/bash
+
+set -e
+
+# --- Ensure SSH Tunnel is Up ---
+if nc -z localhost 8443; then
+    echo "SSH tunnel on port 8443 is already open."
+else
+    echo "SSH tunnel not found on port 8443, establishing..."
+    ssh -fN -L 8443:ugla.hi.is:443 slembir
+    sleep 2
+    echo "SSH tunnel established."
+fi
+
+# --- SSH TUNNEL (uncomment and run in another shell if not already set up) ---
+# ssh -L 8443:ugla.hi.is:443 user_name@loa.rhi.hi.is
+
+echo "1. Initializing the Database..."
+python scripts/init_db.py
+
+echo "2. Importing Institution and Departments..."
+python scripts/fetch_and_import_institutions.py
+python scripts/fetch_and_import_departments.py
+
+echo "3. Importing Programs and Fields of Study..."
+python scripts/fetch_and_import_programs.py
+
+echo "4. Importing Buildings and Rooms..."
+python scripts/fetch_and_import_buildings.py
+python scripts/fetch_and_import_rooms.py
+
+echo "5. Importing Courses and Course Instances..."
+python scripts/fetch_and_import_courses.py
+
+echo "6. Importing Teachers..."
+python scripts/fetch_and_import_teachers.py
+
+echo "7. Importing Timetable, Blocks, and Clashes..."
+python scripts/fetch_and_import_timetable.py
+python scripts/fetch_and_import_blocks.py
+python scripts/fetch_and_import_clashes.py
+
+echo "8. Finding cotaught courses ..."
+python scripts/fetch_and_import_cotaught.py
+
+echo "9. fixing timetable events rooms ..."
+python scripts/fix_timetable_events_rooms.py
+
+echo "10. link teachers and rooms for historic timetable data  ..."
+python scripts/link_historic_teachers.py
+python scripts/fix_timetable_events_rooms.py
+
+echo "11. clone timetable plan ..."
+python scripts/clone_timetable_plan.py 2024 fall historic 2025 version-1
+
+echo "✅ All imports completed successfully!"

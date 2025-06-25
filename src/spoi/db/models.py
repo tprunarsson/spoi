@@ -7,6 +7,14 @@ from datetime import datetime
 
 Base = declarative_base()
 
+def _parse_lang_json(text, lang='is'):
+    import json
+    try:
+        return json.loads(text or '{}').get(lang, '')
+    except Exception:
+        return text or ''
+
+
 # -------- Institution, Department, Program, FieldOfStudy --------
 
 class Institution(Base):
@@ -40,7 +48,7 @@ class Department(Base):
 class Program(Base):
     __tablename__ = 'programs'
     programId = Column(String, primary_key=True)
-    name = Column(Text)
+    name = Column(Text)  # JSON {'en': ..., 'is': ...}
     departmentId = Column(String, ForeignKey('departments.departmentId'))
     department = relationship('Department', back_populates='programs')
     levelShort = Column(String)
@@ -54,12 +62,36 @@ class Program(Base):
     programType = Column(String, nullable=True)
     isCrossDisciplinary = Column(Boolean, nullable=True)
 
+    offerings = relationship('ProgramOffering', back_populates='program')
+
     def set_names(self, en, is_):
         self.name = json.dumps({"en": en, "is": is_})
 
     def get_name(self, lang="en"):
-        data = json.loads(self.name)
+        data = json.loads(self.name or '{}')
         return data.get(lang, "")
+
+class ProgramOffering(Base):
+    __tablename__ = 'program_offerings'
+    programOfferingId = Column(String, primary_key=True)  # e.g. "820193"
+    programId = Column(String, ForeignKey('programs.programId'), nullable=False)
+    academicYear = Column(String, nullable=False)  # e.g. "2025"
+    utgafa = Column(String, nullable=True)  # e.g. "20256"
+    stuttnumer = Column(String, nullable=True)
+    langtnumer = Column(String, nullable=True)
+    title = Column(Text)  # JSON
+    degree = Column(Text)  # JSON
+    ects = Column(String, nullable=True)
+    namsstig = Column(String, nullable=True)
+    learningOutcomes = Column(Text, nullable=True)   # JSON
+    description = Column(Text, nullable=True)        # JSON
+    about = Column(Text, nullable=True)              # JSON
+    admission = Column(Text, nullable=True)          # JSON
+    web_url = Column(Text, nullable=True)
+    active = Column(Boolean, default=True)
+
+    program = relationship('Program', back_populates='offerings')
+
 
 class FieldOfStudy(Base):
     __tablename__ = 'fields_of_study'
@@ -82,20 +114,6 @@ class FieldOfStudy(Base):
     def get_name(self, lang="en"):
         data = json.loads(self.name or "{}")
         return data.get(lang, "")
-
-class ProgramOffering(Base):
-    __tablename__ = 'program_offerings'
-    programOfferingId = Column(String, primary_key=True)
-    programId = Column(String, ForeignKey('programs.programId'), nullable=False)
-    academicYear = Column(String, nullable=False)  # e.g. '2024'
-    curriculumVersion = Column(String, nullable=True)
-    startDate = Column(Date, nullable=True)
-    endDate = Column(Date, nullable=True)
-    isCurrent = Column(Boolean, default=False)
-
-    program = relationship('Program', back_populates='offerings')
-
-Program.offerings = relationship('ProgramOffering', back_populates='program')
 
 class CurriculumComponent(Base):
     __tablename__ = 'curriculum_components'
@@ -154,9 +172,8 @@ class Course(Base):
     def set_canonical_name(self, en, is_):
         self.canonicalName = json.dumps({"en": en, "is": is_})
 
-    def get_canonical_name(self, lang="en"):
-        data = json.loads(self.canonicalName or "{}")
-        return data.get(lang, "")
+    def get_canonical_name(self, lang="is"):
+        return _parse_lang_json(self.canonicalName, lang)
 
 
 # Association table for co-taught course instances
@@ -363,16 +380,20 @@ class CourseStudentCount(Base):
     __tablename__ = 'course_student_counts'
     courseOfferingId = Column(String, ForeignKey('course_offerings.courseOfferingId'), primary_key=True)
     programId = Column(String, ForeignKey('programs.programId'), primary_key=True)
+    fieldOfStudyId = Column(String, ForeignKey('fields_of_study.fieldOfStudyId'), primary_key=True)
     academicYear = Column(String, primary_key=True)
     count = Column(Integer, nullable=False)
+    fetched_at = Column(DateTime, nullable=False)
 
 class CourseClashCount(Base):
     __tablename__ = 'course_clash_counts'
     courseA = Column(String, ForeignKey('course_offerings.courseOfferingId'), primary_key=True)
     courseB = Column(String, ForeignKey('course_offerings.courseOfferingId'), primary_key=True)
     programId = Column(String, ForeignKey('programs.programId'), primary_key=True)
+    fieldOfStudyId = Column(String, ForeignKey('fields_of_study.fieldOfStudyId'), primary_key=True)
     academicYear = Column(String, primary_key=True)
     count = Column(Integer, nullable=False)
+    fetched_at = Column(DateTime, nullable=False)
 
 class Person(Base):
     __tablename__ = 'persons'

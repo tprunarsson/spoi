@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spoi"
+version = "0.1"
+description = "Your project description"
+authors = [{name = "Your Name"}]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
