@@ -1,5 +1,5 @@
 from sqlalchemy import (
-    Column, Table, Date, String, Integer, Boolean, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, Text, DateTime, Float
+    Column, Table, Date, String, Integer, Boolean, ForeignKey, ForeignKeyConstraint, PrimaryKeyConstraint, Text, DateTime, Float, Index
 )
 from sqlalchemy.orm import declarative_base, relationship
 import json
@@ -418,3 +418,18 @@ class OptimizationResult(Base):
 # --- Relationships setup (if any back_populates needed)
 Program.fields = relationship('FieldOfStudy', back_populates='program')
 FieldOfStudy.curriculumComponents = relationship('CurriculumComponent', back_populates='fieldOfStudy')
+
+
+# --- EventMessage Model ---
+class EventMessage(Base):
+    __tablename__ = "event_messages"
+    id = Column(Integer, primary_key=True)
+    event_id = Column(String, index=True)
+    timetable_version = Column(String, index=True)
+    role = Column(String)  # "user" or "assistant"
+    content = Column(Text)
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("ix_event_version", "event_id", "timetable_version"),
+    )

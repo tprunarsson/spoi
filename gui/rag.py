@@ -168,7 +168,7 @@ def load_rag_examples_from_json(json_path, cache=True):
     _cached_examples[cache_key] = results
     return results
 
-def import_rag_json_to_db(json_path="rag_v2.json", db_path="rag.sql"):
+def import_rag_json_to_db(json_path="data/rag.json", db_path="rag.sql"):
     """
     Loads RAG entries from the new JSON and writes them to the database.
     Only fields present in the DB schema will be written.
@@ -635,7 +635,7 @@ def test_fill_example():
     assert 'Introduction to AI' in filled_nl
     assert 'Introduction to AI' in filled_sql
 
-def export_rag_to_json(sqlite_path="rag.sql", json_path="rag.json"):
+def export_rag_to_json(sqlite_path="rag.sql", json_path="data/rag.json"):
     conn = sqlite3.connect(sqlite_path)
     c = conn.cursor()
     c.execute("SELECT intent, nl, sql, created_at FROM rag_examples")

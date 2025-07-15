@@ -1,6 +1,7 @@
-from sqlalchemy import func, and_, literal_column
+from sqlalchemy import func, and_, inspect
 import pandas as pd
 from datetime import time
+import json
 
 from spoi.db.models import (
     CurriculumComponent,
@@ -243,3 +244,20 @@ def get_latest_clash_counts(session, filters=None):
 
     return query.all()
 
+def get_db_schema_str(session):
+    """Return a text description of all tables/columns in the DB."""
+    inspector = inspect(session.bind)
+    tables = inspector.get_table_names()
+    schema_lines = []
+    for table in tables:
+        columns = [col['name'] for col in inspector.get_columns(table)]
+        schema_lines.append(f"- {table}: {', '.join(columns)}")
+    return "\n".join(schema_lines)
+
+def extract_localized_name(name_json, lang="is"):
+    """Extract localized name from JSON string."""
+    try:
+        d = json.loads(name_json)
+        return d.get(lang) or d.get("en") or next(iter(d.values()))
+    except Exception:
+        return str(name_json)
