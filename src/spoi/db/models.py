@@ -297,17 +297,53 @@ class Building(Base):
     name = Column(Text)
     rooms = relationship('Room', back_populates='building')
 
-# -------- TimetablePlan, Event (Session) --------
+# -------- Scenario (Problem Definition) --------
+
+class TimetablingScenario(Base):
+    __tablename__ = "timetabling_scenarios"
+    scenarioId = Column(String, primary_key=True)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    createdAt = Column(DateTime, nullable=False)
+    constraints = relationship('TimetablingConstraint', back_populates='scenario')
+    plans = relationship('TimetablePlan', back_populates='scenario')
+    objectives = relationship('TimetablingObjective', back_populates='scenario')
+
+class TimetablingObjective(Base):
+    __tablename__ = "timetabling_objectives"
+    objectiveId = Column(Integer, primary_key=True, autoincrement=True)
+    scenarioId = Column(String, ForeignKey('timetabling_scenarios.scenarioId'), nullable=False)
+    name = Column(String, nullable=False)
+    expression = Column(Text, nullable=False)   # JSON, e.g. { "sum": ..., ... }
+    description = Column(Text, nullable=True)
+    priority = Column(Integer, nullable=True)   # 1=highest, etc.
+
+    scenario = relationship('TimetablingScenario', back_populates='objectives')
+
+class TimetablingConstraint(Base):
+    __tablename__ = "timetabling_constraints"
+    constraintId = Column(Integer, primary_key=True, autoincrement=True)
+    scenarioId = Column(String, ForeignKey('timetabling_scenarios.scenarioId'), nullable=False)
+    constraintType = Column(String, nullable=False)   # e.g., "room_capacity", "clash", "session_count"
+    variableScope = Column(Text, nullable=False)      # JSON: which IDs/variables (courses, rooms, persons, etc)
+    expression = Column(Text, nullable=False)         # JSON: MIP math, e.g., {"sum": [...], "leq": 3}
+    is_hard = Column(Boolean, default=True)
+    penalty = Column(Float, nullable=True)            # For soft constraints (objective)
+    comment = Column(Text, nullable=True)
+    scenario = relationship('TimetablingScenario', back_populates='constraints')
+
+# -------- TimetablePlan (Solution) --------
 
 class TimetablePlan(Base):
     __tablename__ = 'timetable_plans'
     timetablePlanId = Column(String, primary_key=True)
+    scenarioId = Column(String, ForeignKey('timetabling_scenarios.scenarioId'), nullable=False)
     name = Column(String, nullable=False)
     type = Column(String, nullable=False, default="historic")
     createdAt = Column(DateTime, nullable=False)
     description = Column(Text, nullable=True)
     sourceInfo = Column(String, nullable=True)
-
+    scenario = relationship('TimetablingScenario', back_populates='plans')
     events = relationship('Event', back_populates='timetablePlan')
 
 class Event(Base):
@@ -317,7 +353,6 @@ class Event(Base):
     courseOfferingId = Column(String, ForeignKey('course_offerings.courseOfferingId'), nullable=False)
     componentOfferingId = Column(String, ForeignKey('component_offerings.componentOfferingId'), nullable=True)
     eventGroupId = Column(String, nullable=True)
-
     start = Column(DateTime, nullable=False)
     end = Column(DateTime, nullable=False)
     location = Column(String, nullable=True)
@@ -326,7 +361,6 @@ class Event(Base):
     group = Column(String, nullable=True)
     note = Column(Text, nullable=True)
     teachers = Column(Text, nullable=True)
-
     timetablePlan = relationship('TimetablePlan', back_populates='events')
     courseOffering = relationship('CourseOffering', back_populates='events')
     componentOffering = relationship('ComponentOffering', back_populates='events')
@@ -415,9 +449,6 @@ class OptimizationResult(Base):
     status = Column(String)
     results = Column(Text)
 
-# --- Relationships setup (if any back_populates needed)
-Program.fields = relationship('FieldOfStudy', back_populates='program')
-FieldOfStudy.curriculumComponents = relationship('CurriculumComponent', back_populates='fieldOfStudy')
 
 
 # --- EventMessage Model ---

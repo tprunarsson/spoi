@@ -25,11 +25,45 @@ def event_chat_ui(session, event_click):
         }
     chat_state = st.session_state[chat_state_key]
     chat_manager = EventChatManager(session)
-    memory = chat_manager.get_langchain_memory(event_id, timetable_version)
-    # Show chat history (from persistent DB via LangChain, not just session state)
-    for msg in memory.chat_memory.messages:
-        with st.chat_message(msg.type):
+    history = chat_manager.get_chat_history(event_id, timetable_version)
+
+    # --- Deletion Confirmation State ---
+    delete_key = f"confirm_delete_{event_id}_{timetable_version}"
+    if delete_key not in st.session_state:
+        st.session_state[delete_key] = False
+
+    for msg in history:
+        # If using HumanMessage/AIMessage from langchain_core.messages:
+        if hasattr(msg, "type"):
+            role = "user" if msg.type == "human" else "assistant"
+        else:
+            # fallback for dict-based messages if needed
+            role = msg.get("role", "assistant")
+        with st.chat_message(role):
             st.markdown(msg.content)
+
+    # --- Delete Button & Confirmation ---
+    if history:
+        if not st.session_state[delete_key]:
+            if st.button("🗑️ Delete Chat History for This Event"):
+                st.session_state[delete_key] = True
+                st.rerun()  # Rerun to show the confirmation form
+        else:
+            with st.form("delete_confirm_form"):
+                st.warning("Are you sure you want to delete all chat history for this event?")
+                confirm = st.form_submit_button("Yes, delete")
+                cancel = st.form_submit_button("Cancel")
+                if confirm:
+                    num_deleted = chat_manager.delete_event_chat_history(event_id, timetable_version)
+                    st.success(f"Deleted {num_deleted} chat messages for this event.")
+                    st.session_state[delete_key] = False
+                    st.rerun()
+                elif cancel:
+                    st.info("Deletion cancelled.")
+                    st.session_state[delete_key] = False
+                    st.rerun()
+
+
     # New user input
     user_input = st.chat_input("Ask a question or describe a change for this event:")
     if user_input:

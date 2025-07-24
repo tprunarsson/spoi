@@ -1,42 +1,35 @@
-from langchain.memory.chat_message_histories import SQLChatMessageHistory
-from langchain.memory import ConversationBufferMemory
-from langchain.llms import OpenAI, Ollama
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from spoi.db.models import EventMessage
-import pandas as pd
-from datetime import datetime, timezone
+from langchain_ollama import OllamaLLM
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_community.chat_message_histories import SQLChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from rag import (
-    query_ollama, get_best_rag_example, build_llm_prompt_for_event_chat, profile_sqlalchemy_row, extract_sql_from_llm_response
+    query_ollama, get_best_rag_example, build_llm_prompt_for_event_chat,
+    profile_sqlalchemy_row, extract_sql_from_llm_response
 )
 from spoi.db.queries import get_db_schema_str, extract_localized_name
+from spoi.db.models import EventMessage
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from datetime import datetime, timezone
+import pandas as pd
 
 class EventChatManager:
     def __init__(self, db_session: Session, model_name: str = "llama3"):
         self.session = db_session
         self.model_name = model_name
-        self.llm = self._get_llm()
+        self.llm = OllamaLLM(model=model_name)
+        # You could optionally set up the full chain here if needed
 
-    def _get_llm(self):
-        if self.model_name == "openai":
-            return OpenAI(temperature=0)
-        else:
-            return Ollama(model=self.model_name, temperature=0.1)
+    def get_thread_id(self, event_id, timetable_version):
+        return f"{event_id}:{timetable_version}"
 
-    def get_memory_for_event(self, event_id: str, timetable_version: str):
+    def get_sqlchat_history(self, event_id, timetable_version):
+        """Returns a SQLChatMessageHistory for this event/timetable."""
         return SQLChatMessageHistory(
-            session_id=f"{event_id}:{timetable_version}",
-            connection_string="sqlite:///spoi.sqlite",  # <-- your DB path here!
-            table_name="event_message"                  # <-- your table name here!
-        )
-
-
-    def get_langchain_memory(self, event_id: str, timetable_version: str):
-        history = self.get_memory_for_event(event_id, timetable_version)
-        return ConversationBufferMemory(
-            memory_key="chat_history",
-            chat_memory=history,
-            return_messages=True
+            session_id=self.get_thread_id(event_id, timetable_version),
+            connection=self.session.bind,
+            table_name="event_message"
         )
 
     def add_user_message(self, event_id, timetable_version, content):
@@ -104,10 +97,9 @@ class EventChatManager:
             return f"Error executing SQL:\n```sql\n{sql_query}\n```\n\n{e}"
 
     def handle_event_query(self, event_id, timetable_version, user_msg, props, chat_state):
-        # Add user message to DB
+        # Add user message to DB (for history)
         self.add_user_message(event_id, timetable_version, user_msg)
-
-        # Detect intent
+        # Intent detection
         intent = self.detect_intent(user_msg)
         chat_state["last_user_intent"] = intent
         chat_state["last_user_instruction"] = user_msg
@@ -130,9 +122,59 @@ class EventChatManager:
             self.add_ai_message(event_id, timetable_version, answer)
             return answer
 
-        # Otherwise, generic LLM fallback
+        # Otherwise, generic LLM fallback (but still with history)
         else:
-            prompt = self.get_llm_prompt(user_msg, props, chat_state, intent)
-            response = query_ollama(prompt)
-            self.add_ai_message(event_id, timetable_version, response)
-            return response
+            # Use the RunnableWithMessageHistory pattern
+            return self.llm_with_message_history(event_id, timetable_version, user_msg)
+
+    def llm_with_message_history(self, event_id, timetable_version, user_msg):
+        # 1. Build a ChatPromptTemplate (with history placeholder)
+        prompt = ChatPromptTemplate.from_messages([
+            MessagesPlaceholder(variable_name="history"),
+            ("human", "{input}"),
+        ])
+        # 2. Wrap LLM in RunnableWithMessageHistory
+        chat_history = self.get_sqlchat_history(event_id, timetable_version)
+        chain = prompt | self.llm
+        runnable = RunnableWithMessageHistory(
+            runnable=chain,
+            get_message_history=lambda session_id: chat_history,
+            input_messages_key="input",
+            history_messages_key="history"
+        )
+        # 3. Call it
+        session_id = self.get_thread_id(event_id, timetable_version)
+        output = runnable.invoke(
+            {"input": user_msg},
+            config={"configurable": {"session_id": session_id}}
+        )
+        # Save to DB
+        self.add_ai_message(event_id, timetable_version, output.content)
+        return output.content
+
+    def delete_event_chat_history(self, event_id, timetable_version):
+        print(f"Attempting to delete: event_id={event_id}, timetable_version={timetable_version}")
+        matches = self.session.query(EventMessage)\
+            .filter_by(event_id=event_id, timetable_version=timetable_version).all()
+        print(f"Found {len(matches)} EventMessage(s) before delete")
+        num_deleted = self.session.query(EventMessage)\
+            .filter_by(event_id=event_id, timetable_version=timetable_version)\
+            .delete()
+        self.session.commit()
+        print(f"Deleted {num_deleted} EventMessage(s)")
+        return num_deleted
+
+
+    def get_chat_history(self, event_id, timetable_version):
+        """Retrieve chat history from the DB for the event."""
+        messages = self.session.query(EventMessage)\
+            .filter_by(event_id=event_id, timetable_version=timetable_version)\
+            .order_by(EventMessage.timestamp.asc())\
+            .all()
+        chat_history = []
+        for msg in messages:
+            if msg.role == "user":
+                chat_history.append(HumanMessage(content=msg.content))
+            else:
+                chat_history.append(AIMessage(content=msg.content))
+        return chat_history

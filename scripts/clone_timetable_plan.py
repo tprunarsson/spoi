@@ -63,6 +63,7 @@ def main(from_year, from_term, from_version, to_year, to_version):
         if not new_plan:
             new_plan = TimetablePlan(
                 timetablePlanId=new_plan_id,
+                scenarioId=plan.scenarioId,  # <-- FIX: copy from original plan!
                 name=f"Projected from {old_plan_id}",
                 type="projected",
                 createdAt=datetime.now(),
@@ -71,6 +72,7 @@ def main(from_year, from_term, from_version, to_year, to_version):
             )
             session.add(new_plan)
             session.commit()
+
 
         # Find original semester start (first event, Monday of that week)
         old_events = session.query(Event).filter_by(timetablePlanId=old_plan_id).all()

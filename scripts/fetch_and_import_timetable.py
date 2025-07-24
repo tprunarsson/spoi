@@ -4,7 +4,7 @@ import datetime
 from collections import defaultdict
 from bs4 import BeautifulSoup
 from spoi.db.models import (
-    TimetablePlan, Event, CourseOffering, CurriculumComponent, Component, ComponentOffering
+    TimetablePlan, Event, CourseOffering, CurriculumComponent, Component, ComponentOffering, TimetablingScenario
 )
 from spoi.db.session import SessionLocal
 
@@ -36,13 +36,25 @@ def parse_tooltip_fields(tooltip_html):
 def fetch_and_store_historic_timetable(target_year):
     session = SessionLocal()
 
+    # Ensure there's a unique scenario for all historic imports
+    historic_scenario = session.query(TimetablingScenario).filter_by(name="Historic Import").first()
+    if not historic_scenario:
+        historic_scenario = TimetablingScenario(
+            scenarioId=f"historic-{datetime.datetime.now(datetime.timezone.utc).isoformat()}",
+            name="Historic Import",
+            description="Scenario for historic timetable imports",
+            createdAt=datetime.datetime.now(datetime.timezone.utc),
+        )
+        session.add(historic_scenario)
+        session.flush()
+
+
     # Fetch all offerings for the given year
     courses = session.query(CourseOffering).filter_by(academicYear=str(target_year)).all()
     print(f"Found {len(courses)} course offerings for {target_year}")
 
     for co in courses:
         term = co.courseOfferingId[-1]
-        # For historic import, fetch previous year’s events
         hist_year = target_year - 1
         hist_co_id = co.courseOfferingId[:-5] + f"{hist_year}{term}"
         print(f"Fetching events for historic course offering: {hist_co_id} (year: {hist_year})")
@@ -93,10 +105,12 @@ def fetch_and_store_historic_timetable(target_year):
         plan_id = f"{co.courseCode}-{event_year}{term}-historic"
         plan_name = f"Historic {event_year} term {term}"
 
+        # Only create the plan if it doesn't exist yet
         plan = session.query(TimetablePlan).filter_by(timetablePlanId=plan_id).first()
         if not plan:
             plan = TimetablePlan(
                 timetablePlanId=plan_id,
+                scenarioId=historic_scenario.scenarioId,
                 name=plan_name,
                 type="historic",
                 createdAt=plan_created,

@@ -1,5 +1,5 @@
 # rag.py
-
+from dotenv import load_dotenv
 import sqlite3
 from sqlalchemy import text
 import json
@@ -10,6 +10,14 @@ from sentence_transformers import SentenceTransformer
 import re
 import pandas as pd
 import os
+from openai import OpenAI
+
+# Load environment variables from .env file
+load_dotenv()
+OPENAI_API_KEY = os.getenv("openai_api_key")
+
+# Create the OpenAI client (new API)
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Path to your RAG SQLite database
 RAG_DB_PATH = "rag.sql"
@@ -74,6 +82,7 @@ def get_embed_model():
 
 def query_ollama(prompt, temperature=0.0, model=OLLAMA_MODEL, url=OLLAMA_API_URL):
     """Query Llama or Ollama API for completion."""
+    print(f"Querying LLM with prompt: {prompt}")  # Log first 100 chars
     response = requests.post(
         url,
         json={"model": model, "prompt": prompt, "temperature": temperature, "stream": False}
@@ -82,6 +91,16 @@ def query_ollama(prompt, temperature=0.0, model=OLLAMA_MODEL, url=OLLAMA_API_URL
         return response.json()["response"]
     except Exception:
         return response.text
+
+def query_openai(prompt, temperature=0.0, model="gpt-4.1-mini"):
+    """Query OpenAI ChatGPT for completions using the new API."""
+    print(f"Querying OpenAI with prompt: {prompt}")  # Show only first 100 chars for logging
+    response = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=temperature,
+    )
+    return response.choices[0].message.content
 
 # --- Main RAG Functions ---
 
@@ -656,13 +675,12 @@ def export_rag_to_json(sqlite_path="rag.sql", json_path="data/rag.json"):
         json.dump(examples, f, ensure_ascii=False, indent=2)
     print(f"Exported {len(examples)} RAG examples to {json_path}")
 
-def propose_rag_draft(user_msg=None, chat_history=None):
+def propose_rag_draft(user_msg=None, chat_history=None, llm_backend="openai"):
     """
-    Suggest or refine a RAG example draft via LLM, using previous conversation context if provided.
-    Returns (draft_dict, ai_message, is_json).
+    Suggest or refine a RAG example draft via LLM.
+    llm_backend: "openai" (default) or "ollama"
     """
     if chat_history:
-        # Use last N messages as context window
         context_window = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in chat_history[-6:]])
         ai_prompt = (
             context_window +
@@ -677,7 +695,13 @@ def propose_rag_draft(user_msg=None, chat_history=None):
             "Reply as JSON: {\"intent\": ..., \"nl\": ..., \"sql\": ...}.\n"
             "If unclear, ask a clarifying question."
         )
-    ai_response = query_ollama(ai_prompt)
+
+    # Use OpenAI by default, Ollama only if explicitly requested
+    if llm_backend == "ollama":
+        ai_response = query_ollama(ai_prompt)
+    else:
+        ai_response = query_openai(ai_prompt)
+
     try:
         ai_suggestion = json.loads(ai_response)
         intent = ai_suggestion.get('intent', '')
@@ -691,7 +715,6 @@ def propose_rag_draft(user_msg=None, chat_history=None):
                       "Please let me know if this RAG meets your requirements or if I need to make any adjustments.")
         return draft, ai_message, True
     except Exception:
-        # Not a JSON, treat as clarifying question or fallback
         return None, ai_response, False
 
 if __name__ == "__main__":

@@ -100,7 +100,7 @@ def get_weekday_name(dt, lang="en"):
     else:
         return dt.strftime("%A")
 
-def event_to_calendar_format(event, course_name_map, session):
+def event_to_calendar_format(event, course_name_map, session, timetable_version=None):
     course_offering_id = getattr(event, "courseOfferingId", "")
     course_name = course_name_map.get(course_offering_id, course_offering_id)
     room = session.query(Room).filter_by(roomId=event.roomId).first()
@@ -117,6 +117,7 @@ def event_to_calendar_format(event, course_name_map, session):
         "start": event.start.isoformat(),
         "end": event.end.isoformat(),
         "backgroundColor": color,
+        "timetable_version": timetable_version,
         "extendedProps": {**event_to_dict(event), "course_offering_id": course_offering_id, "course_name": course_name, "room_name": room_name, "teachers_display": teachers,
             "start_time_hhmm": format_time_hhmm(event.start), "end_time_hhmm": format_time_hhmm(event.end),
             "weekday_en": get_weekday_name(event.start, "en"), "weekday_is": get_weekday_name(event.start, "is"),
@@ -205,7 +206,7 @@ def timetable_calendar_ui(session):
     ).all()
     plan_ids = [f"{code}-{sel_term_code}-{sel_version}" for code in course_base_codes]
     events = session.query(Event).filter(Event.timetablePlanId.in_(plan_ids)).all()
-    projected_events = [event_to_calendar_format(e, course_name_map, session) for e in events]
+    projected_events = [event_to_calendar_format(e, course_name_map, session, sel_version) for e in events]
 
     calendar_options = {
         "initialView": "timeGridWeek",
