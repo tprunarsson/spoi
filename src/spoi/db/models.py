@@ -361,14 +361,45 @@ class Event(Base):
     group = Column(String, nullable=True)
     note = Column(Text, nullable=True)
     teachers = Column(Text, nullable=True)
+
+    # Relationships
     timetablePlan = relationship('TimetablePlan', back_populates='events')
     courseOffering = relationship('CourseOffering', back_populates='events')
     componentOffering = relationship('ComponentOffering', back_populates='events')
     room = relationship('Room')
+    blockIntervalId = Column(Integer, ForeignKey('block_intervals.blockIntervalId'), nullable=True)
+    blockInterval = relationship("BlockInterval")
 
     def __repr__(self):
         return (f"<Event {self.courseOfferingId} {self.start} - {self.end} "
                 f"{self.location or self.roomId} [{self.type}]>")
+
+    @property
+    def effective_start(self):
+        if self.blockInterval:
+            from datetime import datetime
+            event_date = self.start.date() if self.start else None
+            if event_date and self.blockInterval.start_time:
+                block_start = datetime.combine(
+                    event_date,
+                    datetime.strptime(self.blockInterval.start_time, "%H:%M").time()
+                )
+                return block_start
+        return self.start
+
+    @property
+    def effective_end(self):
+        if self.blockInterval:
+            from datetime import datetime
+            event_date = self.end.date() if self.end else None
+            if event_date and self.blockInterval.end_time:
+                block_end = datetime.combine(
+                    event_date,
+                    datetime.strptime(self.blockInterval.end_time, "%H:%M").time()
+                )
+                return block_end
+        return self.end
+
 
 # -------- TimeBlock, BlockInterval, CourseOfferingBlock --------
 
