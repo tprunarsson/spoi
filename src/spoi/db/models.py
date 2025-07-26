@@ -305,9 +305,12 @@ class TimetablingScenario(Base):
     name = Column(String, nullable=False)
     description = Column(Text, nullable=True)
     createdAt = Column(DateTime, nullable=False)
+    variables = Column(Text, nullable=True)      # JSON
+    sets = Column(Text, nullable=True)           # JSON
+    parameters = Column(Text, nullable=True)     # JSON
     constraints = relationship('TimetablingConstraint', back_populates='scenario')
-    plans = relationship('TimetablePlan', back_populates='scenario')
     objectives = relationship('TimetablingObjective', back_populates='scenario')
+    plans = relationship('TimetablePlan', back_populates='scenario')
 
 class TimetablingObjective(Base):
     __tablename__ = "timetabling_objectives"

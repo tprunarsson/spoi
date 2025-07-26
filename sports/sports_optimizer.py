@@ -170,7 +170,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
     model.addConstrs(dt[(ex, d, a)] <= W * zt[(ex, d, a)] for (ex, d, a) in EDA)
 
     # Each exercise instance can be performed at most once
-    model.addConstrs(gp.quicksum(z[ex, d, a] for d in D for a in A if (ex, d, a) in EDA) <= 1 for ex in EX)
+    model.addConstrs(gp.quicksum(z[ex, d, a] for d in D for a in A if (ex, d, a) in EDA) == 1 for ex in EX)
 
     all_assigned = model.addConstrs(gp.quicksum(z[ex, d, a] for d in D for a in A if (ex, d, a) in EDA) == 1 for ex in EX)
 
@@ -280,10 +280,10 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
             "timelimit": 200,
             "constraints": [
                 # Require every session to be scheduled (for timeflex only)
-                lambda model: model.addConstrs(
-                    gp.quicksum(z[ex, d, a] for d in D for a in A if (ex, d, a) in EDA) == 1
-                    for ex in EX
-                )
+                #lambda model: model.addConstrs(
+                #    gp.quicksum(z[ex, d, a] for d in D for a in A if (ex, d, a) in EDA) == 1
+                #    for ex in EX
+                #)
             ],
             "sense": gp.GRB.MINIMIZE
         },
@@ -304,8 +304,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
         }
     }
 
-    objective_order = ["timeflex", "feasibility", "default"]
-
+    objective_order = ["timeflex",  "default"] # "feasibility",
 
     added_constraints = []
 
@@ -373,17 +372,19 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
                         start_min = int(start % 60)
                         end_hour = int(end // 60)
                         end_min = int(end % 60)
+                        window_start = LB[key]
+                        window_end = UB[key]
+                        violated_window = not (window_start <= start <= window_end)
                         record = {
                             'Æfing': e,
                             'Dagur': d,
                             'Salur/svæði': ABREV.get(a, a),
                             'Byrjun': f"{start_hour:02d}:{start_min:02d}",
-                            'Endir': f"{end_hour:02d}:{end_min:02d}"
+                            'Endir': f"{end_hour:02d}:{end_min:02d}",
+                            'ViolatedWindow': violated_window
                         }
                         records.append(record)
-    print("Records created:", records)
     result_df = pd.DataFrame(records)
     for col in ['Dagur', 'Byrjun', 'Endir', 'Salur/svæði', 'Æfing']:
         result_df[col] = result_df[col].astype(str).str.strip()
-    print("Final DataFrame:", result_df)
     return result_df

@@ -26,11 +26,12 @@ def timetable_to_events(df: pd.DataFrame) -> list:
         start_dt = datetime.datetime.combine(date, datetime.time(start_hour, start_min))
         end_dt = datetime.datetime.combine(date, datetime.time(end_hour, end_min))
         area = str(row['Salur/svæði']).split('|')[0]
+        violated = row.get('ViolatedWindow', False)
         event = {
             "title": f"{row['Æfing']} ({area})",
             "start": start_dt.isoformat(),
             "end": end_dt.isoformat(),
-            "backgroundColor": "#1976D2"
+            "backgroundColor": "#D32F2F" if violated else "#1976D2"
         }
         events.append(event)
     return events
