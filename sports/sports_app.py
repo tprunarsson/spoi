@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from streamlit_calendar import calendar
 from sports_ui import timetable_to_events
-from sports_optimizer import run_gurobi_optimization
+from sports_optimizer import run_gurobi_optimization, save_solution, load_solution, list_solutions
 import threading
 import queue
 import re
@@ -81,6 +81,19 @@ room_filter = [room_label_to_abbr[l] for l in selected_labels]
 
 exercise_options = sorted(set(df['Æfing'].unique()))
 exercise_filter = st.sidebar.multiselect("Select exercise(s)", exercise_options, default=exercise_options)
+
+with st.sidebar.expander("🔄 Load Previous Solution"):
+    files = list_solutions()
+    print("Available solution files:", files)
+    if files:
+        selected_file = st.selectbox("Select solution file", files)
+        if st.button("Load Solution"):
+            loaded_df = load_solution(selected_file)
+            st.session_state['opt_result'] = loaded_df
+            st.success(f"Loaded {selected_file}")
+    else:
+        st.info("No previous solutions saved.")
+
 
 # --- 3. Editable Table (Always On Full Data) ---
 st.subheader("📋 Forsendur")
@@ -169,6 +182,11 @@ if "opt_result" in st.session_state and st.session_state["opt_result"] is not No
     st.info("Showing the optimized timetable. To re-optimize, edit the table and click the button again.")
 else:
     display_df = edited_df
+
+if "opt_result" in st.session_state and st.session_state["opt_result"] is not None:
+    if st.button("💾 Save Solution"):
+        save_path = save_solution(st.session_state["opt_result"])
+        st.success(f"Solution saved to: {save_path}")
 
 # --- 8. Filtering for Visualization (calendar/table) ---
 def area_abbrev_in_room_filter(area_abbrev, abbr_filter_set):

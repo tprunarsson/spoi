@@ -3,12 +3,34 @@ import numpy as np
 import re
 import gurobipy as gp
 from gurobipy import GRB
+import os
+import json
+import datetime as datetime
+
+def save_solution(result_df, solution_dir="solutions"):
+    os.makedirs(solution_dir, exist_ok=True)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"solution_{timestamp}.json"
+    path = os.path.join(solution_dir, filename)
+    # Save as records (list of dicts)
+    result_df.to_json(path, orient="records", force_ascii=False, indent=2)
+    return path
+
+def list_solutions(solution_dir="sports/solutions"):
+    if not os.path.exists(solution_dir):
+        return []
+    files = [f for f in os.listdir(solution_dir) if f.endswith('.json')]
+    files.sort(reverse=True)
+    return files
+
+def load_solution(filename, solution_dir="solutions"):
+    path = os.path.join(solution_dir, filename)
+    return pd.read_json(path)
 
 def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFrame:
     """
     Full MIP optimizer: processes user-edited df, runs Gurobi, returns schedule DataFrame.
     """
-    print("input dataframe is:", df)  # Debug: print first few rows of the DataFrame
 
     # ------------------- Data Preparation ---------------------
     # 1. Data Cleaning & Splitting Columns

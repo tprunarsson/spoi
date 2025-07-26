@@ -1,0 +1,1170 @@
+[
+  {
+    "Æfing":"2 fl kk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kk fótbolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"19:10",
+    "Endir":"20:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kk fótbolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"18:00",
+    "Endir":"19:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kk fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"12:00",
+    "Endir":"13:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kvk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kvk fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kvk fótbolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"19:10",
+    "Endir":"20:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kvk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"20:00",
+    "Endir":"21:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"2 fl kvk fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"12:00",
+    "Endir":"13:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kvk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kvk fótbolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"18:00",
+    "Endir":"19:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kvk fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kvk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kvk fótbolti",
+    "Dagur":"lau",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"13:10",
+    "Endir":"14:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"19:10",
+    "Endir":"20:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kk fótbolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kk fótbolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"3 fl kk fótbolti",
+    "Dagur":"lau",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"12:00",
+    "Endir":"13:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kvk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kvk fótbolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kvk fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kvk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kvk fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"13:10",
+    "Endir":"14:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"20:00",
+    "Endir":"21:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kk fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kk fótbolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"19:10",
+    "Endir":"20:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"4 fl kk fótbolti",
+    "Dagur":"lau",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"12:00",
+    "Endir":"13:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"5 fl kvk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"15:40",
+    "Endir":"16:55",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"5 fl kvk fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"15:30",
+    "Endir":"16:45",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"5 fl kvk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"14:30",
+    "Endir":"15:45",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"5 fl kvk fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"10:00",
+    "Endir":"11:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"5 fl kk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"14:30",
+    "Endir":"15:45",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"5 fl kk fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"14:30",
+    "Endir":"15:45",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"5 fl kk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"15:15",
+    "Endir":"16:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"5 fl kk fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"10:00",
+    "Endir":"11:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"6 fl kvk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"14:00",
+    "Endir":"15:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"6 fl kvk fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"14:00",
+    "Endir":"15:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"6 fl kvk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"14:00",
+    "Endir":"15:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"6 fl kvk fótbolti",
+    "Dagur":"lau",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"09:00",
+    "Endir":"10:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"6 fl kk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"14:00",
+    "Endir":"15:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"6 fl kk fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"14:00",
+    "Endir":"15:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"6 fl kk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"14:00",
+    "Endir":"15:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"6 fl kk fótbolti",
+    "Dagur":"lau",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"09:00",
+    "Endir":"10:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kvk fótbolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"15:30",
+    "Endir":"16:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kvk fótbolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"15:30",
+    "Endir":"16:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kvk fótbolti",
+    "Dagur":"lau",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"09:00",
+    "Endir":"10:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kk fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"15:30",
+    "Endir":"16:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kk fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"15:30",
+    "Endir":"16:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kk fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"09:00",
+    "Endir":"10:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kk fótbolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"17:00",
+    "Endir":"18:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kk fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"09:00",
+    "Endir":"10:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kvk fótbolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"Æfingv",
+    "Byrjun":"17:00",
+    "Endir":"18:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kvk fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Gervi",
+    "Byrjun":"09:00",
+    "Endir":"10:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"11:00",
+    "Endir":"12:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK fótbolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"11:00",
+    "Endir":"12:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"11:00",
+    "Endir":"12:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK fótbolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"11:00",
+    "Endir":"12:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"11:00",
+    "Endir":"12:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK fótbolti",
+    "Dagur":"lau",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"10:00",
+    "Endir":"11:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"10:00",
+    "Endir":"11:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK fótbolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"17:30",
+    "Endir":"19:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK fótbolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"17:30",
+    "Endir":"19:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK fótbolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"17:30",
+    "Endir":"19:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK fótbolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"17:30",
+    "Endir":"19:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK fótbolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"17:30",
+    "Endir":"19:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK fótbolti",
+    "Dagur":"lau",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"11:40",
+    "Endir":"13:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK fótbolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"Aðalv",
+    "Byrjun":"11:40",
+    "Endir":"13:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 6\/7 ára kvk",
+    "Dagur":"mið",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:30",
+    "Endir":"16:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 6\/7 ára kvk",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:40",
+    "Endir":"16:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 8\/9 ára kvk",
+    "Dagur":"þri",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:00",
+    "Endir":"16:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 8\/9 ára kvk",
+    "Dagur":"fim",
+    "Salur\/svæði":"B",
+    "Byrjun":"15:00",
+    "Endir":"15:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 8\/9 ára kvk",
+    "Dagur":"sun",
+    "Salur\/svæði":"A",
+    "Byrjun":"09:00",
+    "Endir":"10:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 10 ára kvk",
+    "Dagur":"þri",
+    "Salur\/svæði":"A",
+    "Byrjun":"14:30",
+    "Endir":"15:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 10 ára kvk",
+    "Dagur":"fim",
+    "Salur\/svæði":"A",
+    "Byrjun":"14:30",
+    "Endir":"15:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 10 ára kvk",
+    "Dagur":"lau",
+    "Salur\/svæði":"A",
+    "Byrjun":"09:00",
+    "Endir":"10:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 11 ára kvk",
+    "Dagur":"mán",
+    "Salur\/svæði":"A",
+    "Byrjun":"14:30",
+    "Endir":"15:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 11 ára kvk",
+    "Dagur":"mið",
+    "Salur\/svæði":"A",
+    "Byrjun":"14:30",
+    "Endir":"15:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 11 ára kvk",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:45",
+    "Endir":"16:45",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 11 ára kvk",
+    "Dagur":"sun",
+    "Salur\/svæði":"B",
+    "Byrjun":"09:00",
+    "Endir":"09:45",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kvk",
+    "Dagur":"mán",
+    "Salur\/svæði":"B",
+    "Byrjun":"15:00",
+    "Endir":"16:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kvk",
+    "Dagur":"mið",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:00",
+    "Endir":"16:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kvk",
+    "Dagur":"fös",
+    "Salur\/svæði":"B",
+    "Byrjun":"15:50",
+    "Endir":"16:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kvk",
+    "Dagur":"lau",
+    "Salur\/svæði":"A",
+    "Byrjun":"09:00",
+    "Endir":"10:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kvk",
+    "Dagur":"mán",
+    "Salur\/svæði":"A",
+    "Byrjun":"18:00",
+    "Endir":"19:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kvk",
+    "Dagur":"mið",
+    "Salur\/svæði":"B",
+    "Byrjun":"16:00",
+    "Endir":"17:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kvk",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"18:15",
+    "Endir":"19:25",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kvk",
+    "Dagur":"sun",
+    "Salur\/svæði":"B",
+    "Byrjun":"09:45",
+    "Endir":"11:05",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"9 fl kvk",
+    "Dagur":"þri",
+    "Salur\/svæði":"B",
+    "Byrjun":"16:50",
+    "Endir":"18:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"9 fl kvk",
+    "Dagur":"fim",
+    "Salur\/svæði":"B",
+    "Byrjun":"18:20",
+    "Endir":"19:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"9 fl kvk",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"19:25",
+    "Endir":"20:35",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"9 fl kvk",
+    "Dagur":"lau",
+    "Salur\/svæði":"A",
+    "Byrjun":"13:20",
+    "Endir":"14:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"10 fl kvk",
+    "Dagur":"mán",
+    "Salur\/svæði":"A",
+    "Byrjun":"20:30",
+    "Endir":"22:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"10 fl kvk",
+    "Dagur":"mið",
+    "Salur\/svæði":"B",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"10 fl kvk",
+    "Dagur":"fös",
+    "Salur\/svæði":"B",
+    "Byrjun":"16:50",
+    "Endir":"18:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"10 fl kvk",
+    "Dagur":"lau",
+    "Salur\/svæði":"A",
+    "Byrjun":"12:00",
+    "Endir":"13:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 6 ára kk",
+    "Dagur":"þri",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:30",
+    "Endir":"16:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 6 ára kk",
+    "Dagur":"fim",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:30",
+    "Endir":"16:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 7 ára kk",
+    "Dagur":"þri",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:30",
+    "Endir":"16:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 7 ára kk",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:40",
+    "Endir":"16:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 8 ára kk",
+    "Dagur":"þri",
+    "Salur\/svæði":"B",
+    "Byrjun":"15:00",
+    "Endir":"15:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 8 ára kk",
+    "Dagur":"fim",
+    "Salur\/svæði":"B",
+    "Byrjun":"15:50",
+    "Endir":"16:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 8 ára kk",
+    "Dagur":"sun",
+    "Salur\/svæði":"A",
+    "Byrjun":"09:00",
+    "Endir":"10:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 9 ára kk",
+    "Dagur":"mið",
+    "Salur\/svæði":"B",
+    "Byrjun":"15:00",
+    "Endir":"16:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 9 ára kk",
+    "Dagur":"fös",
+    "Salur\/svæði":"B",
+    "Byrjun":"15:00",
+    "Endir":"15:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 10 ára kk",
+    "Dagur":"þri",
+    "Salur\/svæði":"B",
+    "Byrjun":"15:50",
+    "Endir":"16:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 10 ára kk",
+    "Dagur":"fim",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:00",
+    "Endir":"16:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 10 ára kk",
+    "Dagur":"sun",
+    "Salur\/svæði":"B",
+    "Byrjun":"11:05",
+    "Endir":"12:05",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 11 ára kk",
+    "Dagur":"mán",
+    "Salur\/svæði":"B",
+    "Byrjun":"16:10",
+    "Endir":"17:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 11 ára kk",
+    "Dagur":"mið",
+    "Salur\/svæði":"A",
+    "Byrjun":"16:00",
+    "Endir":"17:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 11 ára kk",
+    "Dagur":"fös",
+    "Salur\/svæði":"B",
+    "Byrjun":"18:00",
+    "Endir":"19:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"MB 11 ára kk",
+    "Dagur":"lau",
+    "Salur\/svæði":"B",
+    "Byrjun":"11:20",
+    "Endir":"12:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kk",
+    "Dagur":"mán",
+    "Salur\/svæði":"A",
+    "Byrjun":"19:00",
+    "Endir":"20:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kk",
+    "Dagur":"mið",
+    "Salur\/svæði":"B",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kk",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"14:30",
+    "Endir":"15:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"7 fl kk",
+    "Dagur":"lau",
+    "Salur\/svæði":"B",
+    "Byrjun":"10:10",
+    "Endir":"11:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kk",
+    "Dagur":"mán",
+    "Salur\/svæði":"B",
+    "Byrjun":"19:50",
+    "Endir":"21:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kk",
+    "Dagur":"þri",
+    "Salur\/svæði":"A",
+    "Byrjun":"19:25",
+    "Endir":"20:55",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kk",
+    "Dagur":"fim",
+    "Salur\/svæði":"A",
+    "Byrjun":"19:30",
+    "Endir":"21:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"8 fl kk",
+    "Dagur":"lau",
+    "Salur\/svæði":"B",
+    "Byrjun":"09:00",
+    "Endir":"10:10",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"9 fl kk",
+    "Dagur":"mán",
+    "Salur\/svæði":"B",
+    "Byrjun":"18:40",
+    "Endir":"19:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"9 fl kk",
+    "Dagur":"mið",
+    "Salur\/svæði":"A",
+    "Byrjun":"17:00",
+    "Endir":"18:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"9 fl kk",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"20:35",
+    "Endir":"22:05",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"9 fl kk",
+    "Dagur":"sun",
+    "Salur\/svæði":"A",
+    "Byrjun":"13:00",
+    "Endir":"14:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"10 fl kk",
+    "Dagur":"mán",
+    "Salur\/svæði":"B",
+    "Byrjun":"17:10",
+    "Endir":"18:40",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"10 fl kk",
+    "Dagur":"þri",
+    "Salur\/svæði":"B",
+    "Byrjun":"18:20",
+    "Endir":"19:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"10 fl kk",
+    "Dagur":"fim",
+    "Salur\/svæði":"B",
+    "Byrjun":"16:50",
+    "Endir":"18:20",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"10 fl kk",
+    "Dagur":"lau",
+    "Salur\/svæði":"B",
+    "Byrjun":"12:20",
+    "Endir":"13:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"11\/12 fl kk",
+    "Dagur":"mán",
+    "Salur\/svæði":"B",
+    "Byrjun":"21:00",
+    "Endir":"22:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"11\/12 fl kk",
+    "Dagur":"mið",
+    "Salur\/svæði":"A",
+    "Byrjun":"18:30",
+    "Endir":"20:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"11\/12 fl kk",
+    "Dagur":"fös",
+    "Salur\/svæði":"B",
+    "Byrjun":"19:10",
+    "Endir":"20:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"11\/12 fl kk",
+    "Dagur":"sun",
+    "Salur\/svæði":"B",
+    "Byrjun":"12:05",
+    "Endir":"13:35",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK körfubolta",
+    "Dagur":"mán",
+    "Salur\/svæði":"A",
+    "Byrjun":"16:40",
+    "Endir":"18:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK körfubolta",
+    "Dagur":"þri",
+    "Salur\/svæði":"A",
+    "Byrjun":"18:00",
+    "Endir":"19:25",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK körfubolta",
+    "Dagur":"fim",
+    "Salur\/svæði":"A",
+    "Byrjun":"16:30",
+    "Endir":"18:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK körfubolta",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"16:45",
+    "Endir":"18:15",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK körfubolta",
+    "Dagur":"lau",
+    "Salur\/svæði":"A",
+    "Byrjun":"10:30",
+    "Endir":"12:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KVK körfubolta",
+    "Dagur":"sun",
+    "Salur\/svæði":"A",
+    "Byrjun":"11:30",
+    "Endir":"13:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK körfubolti",
+    "Dagur":"mán",
+    "Salur\/svæði":"A",
+    "Byrjun":"15:40",
+    "Endir":"16:40",
+    "ViolatedWindow":true
+  },
+  {
+    "Æfing":"Meistaraflokkur KK körfubolti",
+    "Dagur":"þri",
+    "Salur\/svæði":"A",
+    "Byrjun":"16:30",
+    "Endir":"18:00",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK körfubolti",
+    "Dagur":"mið",
+    "Salur\/svæði":"A",
+    "Byrjun":"11:30",
+    "Endir":"12:50",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK körfubolti",
+    "Dagur":"fim",
+    "Salur\/svæði":"A",
+    "Byrjun":"18:00",
+    "Endir":"19:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK körfubolti",
+    "Dagur":"fös",
+    "Salur\/svæði":"A",
+    "Byrjun":"13:00",
+    "Endir":"14:30",
+    "ViolatedWindow":false
+  },
+  {
+    "Æfing":"Meistaraflokkur KK körfubolti",
+    "Dagur":"sun",
+    "Salur\/svæði":"A",
+    "Byrjun":"10:00",
+    "Endir":"11:30",
+    "ViolatedWindow":false
+  }
+]
