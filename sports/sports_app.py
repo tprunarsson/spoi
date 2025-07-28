@@ -37,6 +37,9 @@ def get_data(url):
 
 df = get_data(SHEET_URL)
 
+if 'editable_df' not in st.session_state:
+    st.session_state['editable_df'] = df.copy()
+
 required_cols = {'Æfing', 'Salur/svæði'}
 if df.empty or not required_cols.issubset(df.columns):
     st.error("Google Sheet missing required columns ('Æfing', 'Salur/svæði').")
@@ -98,11 +101,12 @@ with st.sidebar.expander("🔄 Load Previous Solution"):
 # --- 3. Editable Table (Always On Full Data) ---
 st.subheader("📋 Forsendur")
 edited_df = st.data_editor(
-    df.reset_index(drop=True),
+    st.session_state['editable_df'],
     use_container_width=True,
     num_rows="dynamic",
     key="editable_table"
 )
+st.session_state['editable_df'] = edited_df
 
 # --- 4. Thread and Queue Setup ---
 if 'kill_gurobi' not in st.session_state:
@@ -131,7 +135,7 @@ with col1:
     if st.button("Besta"):
         if (st.session_state['opt_thread'] is not None 
             and st.session_state['opt_thread'].is_alive()):
-            st.warning("Optimization is already running! Please wait or press 'Stop Gurobi' to stop.")
+            st.warning("Optimization is already running! Please wait or press 'Stop Gurobi' to stop.\n You may need to push the rfresh button below!")
         else:
             st.session_state['kill_gurobi'] = False
             st.session_state["opt_result"] = None  # clear previous result
@@ -197,20 +201,6 @@ filtered_display_df = display_df[
     display_df['Æfing'].isin(exercise_filter) &
     display_df['Salur/svæði'].apply(lambda sv: area_abbrev_in_room_filter(sv, set(room_filter)))
 ].copy()
-
-#def area_abbrev_in_room_filter(area_str, room_filter_set):
-#    # For each abbreviation in room_filter, see if any of its full names is in area_str
-#    for abbr in room_filter_set:
-#        for full_name in abbr_to_full[abbr]:
-#            if full_name in area_str or abbr in area_str:
-#                return True
-#    return False
-
-#filtered_display_df = display_df[
-#    display_df['Æfing'].isin(exercise_filter) &
-#    display_df['Salur/svæði'].apply(lambda sv: area_abbrev_in_room_filter(sv, set(room_filter)))
-#].copy()
-
 
 
 # --- 9. Calendar Display (Filtered) ---
