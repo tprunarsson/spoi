@@ -27,7 +27,7 @@ def load_solution(filename, solution_dir="solutions"):
     path = os.path.join(solution_dir, filename)
     return pd.read_json(path)
 
-def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFrame:
+def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None) -> pd.DataFrame:
     """
     Full MIP optimizer: processes user-edited df, runs Gurobi, returns schedule DataFrame.
     """
@@ -58,6 +58,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
     svaedi_dagar_df = df[['Æfing','Salur/svæði']].explode('Salur/svæði').reset_index(drop=True)
     svaedi_dagar_df[['Salur/svæði', 'Dagar']] = svaedi_dagar_df['Salur/svæði'].apply(lambda x: pd.Series(extract_days(x)))
     svaedi = set(svaedi_dagar_df['Salur/svæði'].str.strip())
+    print(f"Debug: Unique areas extracted: {svaedi}")
     aefing = set(svaedi_dagar_df['Æfing'].str.strip())
 
     # 3. Add Priority Dictionary
@@ -122,7 +123,10 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
     Dw = ['sun', 'lau']
     A = svaedi
 
-    e_a = {row['Æfing']: list(row['Salur/svæði']) for _, row in df.iterrows()}
+    e_a = df[['Æfing', 'Salur/svæði']].explode('Salur/svæði').copy()
+    e_a['Area'] = e_a['Salur/svæði'].apply(lambda s: extract_days(s)[0])
+    e_a = e_a.groupby('Æfing')['Area'].apply(set).to_dict()
+    print(f"Debug: e_a mapping: {e_a}")
 
     EXsubset = {}
     DXsubset = {}
@@ -159,7 +163,35 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
         'A-sal': ['1/3 A-sal-1', '1/3 A-sal-2', '1/3 A-sal-3', '2/3 A-sal'],
         '2/3 A-sal': ['1/3 A-sal-1', '1/3 A-sal-2']
     }
-
+    #print(f"Debug: EDA: {EDA}")
+    # Build lookup dict for previous solution
+    prev_assignment = {}
+    mod_penalty = {}
+    modifiedEDA = []
+    if prev_soln is not None:
+        for _, row in prev_soln.iterrows():
+            e = row['Æfing']
+            d = row['Dagur']
+            a = row['Salur/svæði']
+            t = row['Byrjun']
+            start_minutes = time_to_minutes(str(t))
+            modified = row.get('Modified', False)
+            violated = row.get('ViolatedWindow', False)
+            penalty = 0 if violated else (100 if modified else 1)
+            if modified:
+                print(f"Debug: Modified: {e} on {d} in {a} at {t} ({start_minutes} minutes)")
+            if violated:
+                print(f"Debug: Violated: {e} on {d} in {a} at {t} ({start_minutes} minutes)")
+            # Match against all possible sub-EXs
+            if not violated:
+                for ex in EXsubset.get(e, []):
+                    key = (ex, d)
+                    if modified:
+                        modifiedEDA.append(key)
+                    if key in EDA:
+                        prev_assignment[key] = start_minutes
+                        mod_penalty[key] = penalty
+        print(modifiedEDA)
     # ------------------- MIP Model ---------------------
     
     # --- 1. Model Setup ---
@@ -172,13 +204,10 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
     ExE = {(EX[i], EX[j]) for i in range(len(EX)) for j in range(len(EX)) if i != j}
     y = model.addVars(ExE, vtype="B", name='y')
     q = model.addVars(E, range(len(D)), name='q')
-    c = model.addVars(EDA, vtype="B", name='c')
+    #c = model.addVars(EDA, vtype="B", name='c')
     dt = model.addVars(EDA, name='dt') # new time flex strategy 
+    delta_prev = model.addVars(prev_assignment.keys(), name="delta_prev")  # deviation from previous start
     zt = model.addVars(EDA, vtype="B", name='zt') # new time flex strategy
-
-    # --- 2. Objective Function ---
-
-    W = 100
 
     # --- 2. Time and Activation Constraints ---
 
@@ -189,12 +218,10 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
     model.addConstrs(x[ex, d, a] <= UB[(ex, d, a)] * z[ex, d, a] + dt[(ex, d, a)] for (ex, d, a) in EDA)
 
     # Indicator for time change:
-    model.addConstrs(dt[(ex, d, a)] <= W * zt[(ex, d, a)] for (ex, d, a) in EDA)
+    model.addConstrs(dt[(ex, d, a)] <= M * zt[(ex, d, a)] for (ex, d, a) in EDA)
 
     # Each exercise instance can be performed at most once
     model.addConstrs(gp.quicksum(z[ex, d, a] for d in D for a in A if (ex, d, a) in EDA) == 1 for ex in EX)
-
-    all_assigned = model.addConstrs(gp.quicksum(z[ex, d, a] for d in D for a in A if (ex, d, a) in EDA) == 1 for ex in EX)
 
     # Each exercise (group) at most once per day
     model.addConstrs(
@@ -293,7 +320,34 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
     bias['1/3 A-sal-1'] = 1.02
     bias['1/3 A-sal-2'] = 1.01
 
+    if prev_soln is not None:
+        expr1 =  model.addConstrs(
+                delta_prev[ex, d] >= gp.quicksum(x[ex, d, a] for a in A if (ex,d,a) in EDA) - prev_assignment[ex,d] for (ex,d) in prev_assignment
+            )
+        expr2 =  model.addConstrs(
+                delta_prev[ex, d] >= -gp.quicksum(x[ex, d, a] for a in A if (ex,d,a) in EDA) + prev_assignment[ex,d] for (ex,d) in prev_assignment
+            )
+        stayclose_constraints = [expr1, expr2]
+    else:
+        stayclose_constraints = []
+
     # --- 10. Objectives Setup (Using 'e', not 'ex', for priority) ---
+    def stayclose_constraint_fn(model):
+        expr1 = model.addConstrs(
+            (delta_prev[ex, d] >= gp.quicksum(x[ex, d, a] for a in A if (ex, d, a) in EDA) - prev_assignment[(ex, d)]
+            for (ex, d) in prev_assignment),
+            name="prev_diff_lower"
+        )
+        expr2 = model.addConstrs(
+            (delta_prev[ex, d] >= -gp.quicksum(x[ex, d, a] for a in A if (ex, d, a) in EDA) + prev_assignment[(ex, d)]
+            for (ex, d) in prev_assignment),
+            name="prev_diff_upper"
+        )
+        expr3 = model.addConstr(
+            (gp.quicksum(zt[ex, d, a] for (ex, d, a) in EDA if (ex, d) in modifiedEDA) == 0),
+            name="no_modified_zt"
+        )
+        return [expr1, expr2, expr3]
     objectives = {
         "timeflex": {
             "expr": gp.quicksum(priority_order.get(e, 1) * (dt[ex, d, a] + 100*zt[ex, d, a])
@@ -309,12 +363,10 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
             ],
             "sense": gp.GRB.MINIMIZE
         },
-        "feasibility": {
-            "expr": gp.quicksum(-priority_order.get(e, 1) * z[ex, d, a]
-                                for e in E for ex in EXsubset[e]
-                                for d in D for a in A if (ex, d, a) in EDA),
-            "timelimit": 200,
-            "constraints": [],
+        "stayclose": {
+            "expr": gp.quicksum(mod_penalty.get((ex, d), 1)*delta_prev[ex, d] for (ex, d) in prev_assignment.keys()),
+            "timelimit": 60,
+            "constraints": [stayclose_constraint_fn],
             "sense": gp.GRB.MINIMIZE
         },
         "default": {
@@ -325,8 +377,12 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
             "sense": gp.GRB.MINIMIZE
         }
     }
-
-    objective_order = ["timeflex",  "default"] # "feasibility",
+    if prev_soln is not None:
+        # Add previous solution as a constraint to the default objective
+        #objective_order = ["stayclose", "timeflex",  "default"] # "feasibility",
+        objective_order = ["stayclose", "timeflex"]
+    else:
+        objective_order = ["timeflex",  "default"] # "feasibility",
 
     added_constraints = []
 
@@ -360,14 +416,14 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None) -> pd.DataFram
             print(f"Warning: {obj_name} not solved to optimality.")
 
         # Remove constraints ONLY if not on the last iteration
-        if i < len(objective_order) - 1:
-            for constr_group in added_constraints:
-                if hasattr(constr_group, "values"):
-                    for c in constr_group.values():
-                        model.remove(c)
-                else:
-                    model.remove(constr_group)
-            model.update()
+        #if i < len(objective_order) - 1:
+        #    for constr_group in added_constraints:
+        #        if hasattr(constr_group, "values"):
+        #            for c in constr_group.values():
+        #                model.remove(c)
+        #        else:
+        #            model.remove(constr_group)
+        #    model.update()
 
 
     # --------------- Build Output DataFrame for Display/Calendar ---------------
