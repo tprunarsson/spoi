@@ -50,13 +50,6 @@ if df.empty or not required_cols.issubset(df.columns):
     st.error("Google Sheet missing required columns ('Æfing', 'Salur/svæði').")
     st.stop()
 
-# Add dummy time columns if missing
-if not set(['Dagur', 'Byrjun', 'Endir']).issubset(df.columns):
-    days = ['mán', 'þri', 'mið', 'fim', 'fös', 'lau', 'sun']
-    df['Dagur'] = np.random.choice(days, size=len(df))
-    df['Byrjun'] = np.random.choice(['08:00', '10:00', '12:00', '16:00', '18:00'], size=len(df))
-    df['Endir'] = np.random.choice(['09:30', '11:30', '13:30', '17:30', '19:30'], size=len(df))
-
 # --- 2. Sidebar Filters (pretty labels, abbreviation logic) ---
 st.sidebar.header("Filters")
 
@@ -70,7 +63,6 @@ for sv in editable_df['Salur/svæði']:
         if area:
             base = get_area_base(area)  # strips (mán) etc.
             all_areas.add(base)
-
 
 abbr_to_full = defaultdict(list)
 for area in all_areas:
@@ -100,10 +92,9 @@ with st.sidebar.expander("🔄 Load Previous Solution"):
         if st.button("Load Solution"):
             loaded_df = load_solution(selected_file)
             st.session_state['opt_result'] = loaded_df
-            st.session_state['editable_df'] = loaded_df.copy()  # sync editable base
             force_calendar_redraw()
             st.success(f"Loaded {selected_file}")
-            st.rerun()  # <-- refresh sidebar
+            st.rerun()
     else:
         st.info("No previous solutions saved.")
 
@@ -328,7 +319,7 @@ if filtered_display_df is not None and not filtered_display_df.empty:
     
     # Drop the last column (assumed to be EventID)
     display_df_cleaned = display_df_cleaned.iloc[:, :-1]
-    
+
     # Parse Byrjun time to minutes for sorting (if needed)
     def time_to_minutes(t):
         h, m = map(int, str(t).split(":"))
