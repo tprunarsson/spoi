@@ -7,13 +7,18 @@ import os
 import json
 import datetime as datetime
 
-def save_solution(result_df, solution_dir="solutions"):
+def save_solution(result_df, edited_df=None, solution_dir="solutions"):
     os.makedirs(solution_dir, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"solution_{timestamp}.json"
     path = os.path.join(solution_dir, filename)
-    # Save as records (list of dicts)
-    result_df.to_json(path, orient="records", force_ascii=False, indent=2)
+    full_data = {
+        "conditions": edited_df.to_dict(orient="records") if edited_df is not None else [],
+        "solution": result_df.to_dict(orient="records")
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(full_data, f, ensure_ascii=False, indent=2)
+
     return path
 
 def list_solutions(solution_dir="sports/solutions"):
@@ -25,7 +30,11 @@ def list_solutions(solution_dir="sports/solutions"):
 
 def load_solution(filename, solution_dir="solutions"):
     path = os.path.join(solution_dir, filename)
-    return pd.read_json(path)
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    result_df = pd.DataFrame(data.get("solution", []))
+    conditions_df = pd.DataFrame(data.get("conditions", []))
+    return result_df, conditions_df
 
 def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None) -> pd.DataFrame:
     """
@@ -353,7 +362,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
             "expr": gp.quicksum(priority_order.get(e, 1) * (dt[ex, d, a] + 100*zt[ex, d, a])
                                 for e in E for ex in EXsubset[e]
                                 for d in D for a in A if (ex, d, a) in EDA),
-            "timelimit": 200,
+            "timelimit": 100,
             "constraints": [
                 # Require every session to be scheduled (for timeflex only)
                 #lambda model: model.addConstrs(
@@ -372,7 +381,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         "default": {
             "expr": 100 * gp.quicksum(q[e, i] for e in E for i in range(len(D)))
                 + (1 / (len(EX))) * gp.quicksum(bias[a] * x[ex, d, a] for (ex, d, a) in EDA),
-            "timelimit": 200,
+            "timelimit": 100,
             "constraints": [],
             "sense": gp.GRB.MINIMIZE
         }

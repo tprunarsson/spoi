@@ -10,6 +10,7 @@ import re
 from collections import defaultdict
 import time
 from st_aggrid import AgGrid, GridOptionsBuilder
+from streamlit_tags import st_tags
 
 # --- Abbreviations mapping (must match optimizer!) ---
 ABBREV = {
@@ -51,7 +52,24 @@ if df.empty or not required_cols.issubset(df.columns):
     st.stop()
 
 # --- 2. Sidebar Filters (pretty labels, abbreviation logic) ---
-st.sidebar.header("Filters")
+#st.sidebar.header("Val")
+if 'editor_version' not in st.session_state:
+    st.session_state['editor_version'] = 0
+
+with st.sidebar.expander("🔄 Opna Solution"):
+    files = list_solutions()
+    if files:
+        selected_file = st.selectbox("Select solution file", files)
+        if st.button("Load Solution"):
+            loaded_df, editable_df = load_solution(selected_file)
+            st.session_state['opt_result'] = loaded_df
+            st.session_state['editable_df'] = editable_df
+            st.session_state['editor_version'] += 1 
+            force_calendar_redraw()
+            st.success(f"Loaded {selected_file}")
+            st.rerun()
+    else:
+        st.info("No previous solutions saved.")
 
 # Collect all area names, then map to abbreviation
 editable_df = st.session_state['editable_df']  # ensure up-to-date edits
@@ -75,28 +93,30 @@ room_labels = [
 ]
 room_label_to_abbr = dict(zip(room_labels, room_options))
 
-selected_labels = st.sidebar.multiselect(
-    "Veldu svæði (Select area(s))",
-    room_labels,
-    default=room_labels
-)
+with st.sidebar.expander("Veldu svæði"):
+    select_all = st.checkbox("Select All", value=True, key="select_all_rooms")
+    selected_labels = st.multiselect(
+        "Choose room(s):",
+        room_labels,
+        default=room_labels if st.session_state.select_all_rooms else [],
+        key="room_multiselect"
+    )
 room_filter = [room_label_to_abbr[l] for l in selected_labels]
 
 exercise_options = sorted(set(df['Æfing'].unique()))
-exercise_filter = st.sidebar.multiselect("Select exercise(s)", exercise_options, default=exercise_options)
+with st.sidebar.expander("Veldu æfingar"):
+    select_all_exercises = st.checkbox("Select All", value=True, key="select_all_exercises")
+    selected_exercises = st.multiselect(
+        "Choose exercise(s):",
+        exercise_options,
+        default=exercise_options if st.session_state.select_all_exercises else [],
+        key="exercise_multiselect"
+    )
+exercise_filter = selected_exercises
 
-with st.sidebar.expander("🔄 Load Previous Solution"):
-    files = list_solutions()
-    if files:
-        selected_file = st.selectbox("Select solution file", files)
-        if st.button("Load Solution"):
-            loaded_df = load_solution(selected_file)
-            st.session_state['opt_result'] = loaded_df
-            force_calendar_redraw()
-            st.success(f"Loaded {selected_file}")
-            st.rerun()
-    else:
-        st.info("No previous solutions saved.")
+
+#exercise_filter = st.sidebar.multiselect("Select exercise(s)", exercise_options, default=exercise_options)
+
 
 # --- 3. Editable Table (Always On Full Data) ---
 st.subheader("📋 Forsendur")
@@ -104,7 +124,7 @@ edited_df = st.data_editor(
     st.session_state['editable_df'],
     use_container_width=True,
     num_rows="dynamic",
-    key="editable_table"
+    key=f"editable_table_{st.session_state['editor_version']}"
 )
 st.session_state['editable_df'] = edited_df
 display_df = st.session_state.get("opt_result")
@@ -235,7 +255,7 @@ if display_df is not None:
 
 if "opt_result" in st.session_state and st.session_state["opt_result"] is not None:
     if st.button("💾 Save Solution"):
-        save_path = save_solution(st.session_state["opt_result"])
+        save_path = save_solution(st.session_state["opt_result"], st.session_state['editable_df'])
         st.success(f"Solution saved to: {save_path}")
 
 # --- 8. Filtering for Visualization (calendar/table) ---
