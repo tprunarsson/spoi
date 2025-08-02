@@ -41,7 +41,9 @@ def get_data(url):
         st.error(f"Failed to load the Google Sheet. Error: {e}")
         return pd.DataFrame()
 
-df = get_data(SHEET_URL)
+#df = get_data(SHEET_URL)
+_, df = load_solution(list_solutions()[0])
+
 
 if 'editable_df' not in st.session_state:
     st.session_state['editable_df'] = df.copy()
@@ -293,13 +295,19 @@ if display_df is not None:
         calendar_return = calendar(
             events=events,
             options=calendar_options,
-            key=calendar_key
+            key=calendar_key,
+            callbacks=["eventMouseEnter"],
         )
     else:
         calendar_return = None
         st.info("No events to display with the current filters.")
 else:
     calendar_return = None
+# Show tooltip on mouse hover using eventMouseEnter
+if calendar_return and "eventMouseEnter" in calendar_return:
+    event = calendar_return["eventMouseEnter"]["event"]
+    st.toast(f"Æfing: {event.get('title')} ({event.get('start')} - {event.get('end')})", icon="💡")
+
 # Handle calendar edits (drag-and-drop)
 if calendar_return and "eventChange" in calendar_return:
     changed_event = calendar_return["eventChange"]["event"]

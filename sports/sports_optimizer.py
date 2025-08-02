@@ -6,6 +6,7 @@ from gurobipy import GRB
 import os
 import json
 import datetime as datetime
+import time
 
 def save_solution(result_df, edited_df=None, solution_dir="solutions"):
     os.makedirs(solution_dir, exist_ok=True)
@@ -202,13 +203,16 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
                         mod_penalty[key] = penalty
         print(modifiedEDA)
     # ------------------- MIP Model ---------------------
-    
+
+
     # --- 1. Model Setup ---
     model = gp.Model()
-
+    tic = time.time()
     # Decision variables
     x = model.addVars(EDA, ub=UB, name='x')
     z = model.addVars(EDA, vtype="B", name='z')
+    DEE = [(d,e1,e2) for d in D for e1 in undan_eftir for e2 in [undan_eftir[e1]]]
+    zu = model.addVars(DEE)
     M = 24 * 60
     ExE = {(EX[i], EX[j]) for i in range(len(EX)) for j in range(len(EX)) if i != j}
     y = model.addVars(ExE, vtype="B", name='y')
@@ -217,54 +221,109 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     dt = model.addVars(EDA, name='dt') # new time flex strategy 
     delta_prev = model.addVars(prev_assignment.keys(), name="delta_prev")  # deviation from previous start
     zt = model.addVars(EDA, vtype="B", name='zt') # new time flex strategy
+    toc = time.time()
+    print(f"1. Execution time: {toc - tic:.2f} seconds")
+
 
     # --- 2. Time and Activation Constraints ---
-
+    tic = time.time()
     # If exercise ex is scheduled on day d in area a, it should start after LB
     model.addConstrs(z[ex, d, a] * LB[(ex, d, a)] - dt[(ex, d, a)] <= x[ex, d, a] for (ex, d, a) in EDA)
-
+    
     # If not scheduled, force to zero
     model.addConstrs(x[ex, d, a] <= UB[(ex, d, a)] * z[ex, d, a] + dt[(ex, d, a)] for (ex, d, a) in EDA)
-
+    
     # Indicator for time change:
     model.addConstrs(dt[(ex, d, a)] <= M * zt[(ex, d, a)] for (ex, d, a) in EDA)
-
+    
     # Each exercise instance can be performed at most once
     model.addConstrs(gp.quicksum(z[ex, d, a] for d in D for a in A if (ex, d, a) in EDA) == 1 for ex in EX)
-
+    
     # Each exercise (group) at most once per day
     model.addConstrs(
         gp.quicksum(z[ex, d, a] for ex in EXsubset[e] for a in A if (ex, d, a) in EDA) <= 1
         for d in D for e in E
     )
+    toc = time.time()
+    print(f"2. Execution time: {toc - tic:.2f} seconds")
 
     # --- 3. Overlap Constraints (no overlap at same location) ---
+    tic = time.time()
+    #EEDA = [(e1,e2,d,a) for (e1, e2) in ExE for d in D for a in A if (e1, d, a) in EDA and (e2, d, a) in EDA]
+    from collections import defaultdict
 
+    eda_by_ex = defaultdict(set)
+    for ex, d, a in EDA:
+        eda_by_ex[ex].add((d, a))
+
+    EEDA = []
+    for e1, e2 in ExE:
+        shared_day_areas = eda_by_ex[e1].intersection(eda_by_ex[e2])
+        for d, a in shared_day_areas:
+            EEDA.append((e1, e2, d, a))
+
+    #model.addConstrs(
+    #    x[e1, d, a] + DX[e1] <= x[e2, d, a] + M * (1 - z[e1, d, a]) + M * (1 - z[e2, d, a]) + M * y[e1, e2]
+    #    for (e1, e2) in ExE for d in D for a in A
+    #    if (e1, d, a) in EDA and (e2, d, a) in EDA
+    #)
     model.addConstrs(
         x[e1, d, a] + DX[e1] <= x[e2, d, a] + M * (1 - z[e1, d, a]) + M * (1 - z[e2, d, a]) + M * y[e1, e2]
-        for (e1, e2) in ExE for d in D for a in A
-        if (e1, d, a) in EDA and (e2, d, a) in EDA
+        for (e1, e2, d, a) in EEDA
     )
+    #model.addConstrs(
+    #    x[e2, d, a] + DX[e2] <= x[e1, d, a] + M * (1 - z[e1, d, a]) + M * (1 - z[e2, d, a]) + M * (1 - y[e1, e2])
+    #    for (e1, e2) in ExE for d in D for a in A
+    #    if (e1, d, a) in EDA and (e2, d, a) in EDA
+    #)
     model.addConstrs(
         x[e2, d, a] + DX[e2] <= x[e1, d, a] + M * (1 - z[e1, d, a]) + M * (1 - z[e2, d, a]) + M * (1 - y[e1, e2])
-        for (e1, e2) in ExE for d in D for a in A
-        if (e1, d, a) in EDA and (e2, d, a) in EDA
+        for (e1, e2, d, a) in EEDA
     )
-
+    toc = time.time()
+    print(f"3. Execution time: {toc - tic:.2f} seconds")
+    tic = time.time()
     # --- 4. Overlap Constraints for Shared Areas (ekki_deila_svaedi) ---
+    #EEDAA = [(e1,e2,d,a1,a2) for (e1, e2) in ExE for d in D for a1 in ekki_deila_svaedi for a2 in ekki_deila_svaedi[a1] if (e1, d, a1) in EDA and (e2, d, a2) in EDA]
+    from collections import defaultdict
 
+    # Index EDA by (ex, d)
+    eda_by_ex_day = defaultdict(set)
+    for ex, d, a in EDA:
+        eda_by_ex_day[(ex, d)].add(a)
+
+    EEDAA = []
+    for (e1, e2) in ExE:
+        for d in D:
+            valid_a1s = [a1 for a1 in eda_by_ex_day[(e1, d)] if a1 in ekki_deila_svaedi]
+            for a1 in valid_a1s:
+                valid_a2s = eda_by_ex_day[(e2, d)] & set(ekki_deila_svaedi[a1])
+                for a2 in valid_a2s:
+                    EEDAA.append((e1, e2, d, a1, a2))
+
+    #model.addConstrs(
+    #    x[e1, d, a1] + DX[e1] <= x[e2, d, a2] + M * (1 - z[e1, d, a1]) + M * (1 - z[e2, d, a2]) + M * y[e1, e2]
+    #    for (e1, e2) in ExE for d in D
+    #    for a1 in ekki_deila_svaedi for a2 in ekki_deila_svaedi[a1]
+    #    if (e1, d, a1) in EDA and (e2, d, a2) in EDA
+    #)
     model.addConstrs(
         x[e1, d, a1] + DX[e1] <= x[e2, d, a2] + M * (1 - z[e1, d, a1]) + M * (1 - z[e2, d, a2]) + M * y[e1, e2]
-        for (e1, e2) in ExE for d in D
-        for a1 in ekki_deila_svaedi for a2 in ekki_deila_svaedi[a1]
-        if (e1, d, a1) in EDA and (e2, d, a2) in EDA
+        for (e1, e2, d, a1, a2) in EEDAA
     )
+    #model.addConstrs(
+    #    x[e2, d, a2] + DX[e2] <= x[e1, d, a1] + M * (1 - z[e1, d, a1]) + M * (1 - z[e2, d, a2]) + M * (1 - y[e1, e2])
+    #    for (e1, e2) in ExE for d in D
+    #    for a1 in ekki_deila_svaedi for a2 in ekki_deila_svaedi[a1]
+    #    if (e1, d, a1) in EDA and (e2, d, a2) in EDA
+    #)
     model.addConstrs(
         x[e2, d, a2] + DX[e2] <= x[e1, d, a1] + M * (1 - z[e1, d, a1]) + M * (1 - z[e2, d, a2]) + M * (1 - y[e1, e2])
-        for (e1, e2) in ExE for d in D
-        for a1 in ekki_deila_svaedi for a2 in ekki_deila_svaedi[a1]
-        if (e1, d, a1) in EDA and (e2, d, a2) in EDA
+        for (e1, e2, d, a1, a2) in EEDAA
     )
+
+    toc = time.time()
+    print(f"4. Execution time: {toc - tic:.2f} seconds")
 
     # --- 5. Conflict Constraints (Árekstur) ---
 
@@ -284,14 +343,18 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         + M * (1 - y[e1, e2])
         for e1 in CX for e2 in CX[e1] for d in D if e2 in DX
     )
-
+    toc = time.time()
+    print(f"5. Execution time: {toc - tic:.2f} seconds")
+    tic = time.time()
     # --- 6. Legal Days for Area/Exercise (svaedi_dagar) ---
 
     model.addConstrs(
         gp.quicksum(z[ex, d, a] for d in D for ex in EXsubset[e] if (ex, d, a) in EDA and d not in svaedi_dagar[(e, a)]) == 0
         for (e, a) in svaedi_dagar
     )
-
+    toc = time.time()
+    print(f"6. Execution time: {toc - tic:.2f} seconds")
+    tic = time.time()
     # --- 7. Before/After Constraints (undan_eftir) ---
 
     model.addConstrs(
@@ -299,16 +362,29 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         <= gp.quicksum(x[ex, d, a] for ex in EXsubset[e2] for a in A if (ex, d, a) in EDA)
         + M * (1 - gp.quicksum(z[ex, d, a] for ex in EXsubset[e1] for a in A if (ex, d, a) in EDA))
         + M * (1 - gp.quicksum(z[ex, d, a] for ex in EXsubset[e2] for a in A if (ex, d, a) in EDA))
-        for d in D for e1 in undan_eftir for e2 in [undan_eftir[e1]]
+        #for d in D for e1 in undan_eftir for e2 in [undan_eftir[e1]]
+        for (d, e1, e2) in DEE
     )
     model.addConstrs(
         gp.quicksum(x[ex, d, a] + DX[ex] * z[ex, d, a] for ex in EXsubset[e1] for a in A if (ex, d, a) in EDA)
         >= gp.quicksum(x[ex, d, a] for ex in EXsubset[e2] for a in A if (ex, d, a) in EDA)
         - M * (1 - gp.quicksum(z[ex, d, a] for ex in EXsubset[e1] for a in A if (ex, d, a) in EDA))
         - M * (1 - gp.quicksum(z[ex, d, a] for ex in EXsubset[e2] for a in A if (ex, d, a) in EDA))
-        for d in D for e1 in undan_eftir for e2 in [undan_eftir[e1]]
+        #for d in D for e1 in undan_eftir for e2 in [undan_eftir[e1]]
+        for (d, e1, e2) in DEE
     )
 
+    # Experimental addition how often are á undan or á eftir exercises on the same day?
+    model.addConstrs(gp.quicksum(z[ex,d,a] for a in A for ex in EXsubset[e1] if (ex,d,a) in EDA) <= 
+                     gp.quicksum(z[ex,d,a] for a in A for ex in EXsubset[e2] if (ex,d,a) in EDA) + M*zu[d,e1,e2] 
+                     for (d, e1, e2) in DEE)
+    model.addConstrs(gp.quicksum(z[ex,d,a] for a in A for ex in EXsubset[e1] if (ex,d,a) in EDA) >= 
+                     gp.quicksum(z[ex,d,a] for a in A for ex in EXsubset[e2] if (ex,d,a) in EDA) - M*zu[d,e1,e2] 
+                     for (d, e1, e2) in DEE)
+
+    toc = time.time()
+    print(f"7. Execution time: {toc - tic:.2f} seconds")
+    tic = time.time()
     # --- 8. Two Consecutive Days (q variable) ---
 
     model.addConstrs(
@@ -323,7 +399,9 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
                     if (ex, D[6], a) in EDA and (ex, D[0], a) in EDA) - 1 <= q[e, 6]
         for e in E
     )
-
+    toc = time.time()
+    print(f"8. Execution time: {toc - tic:.2f} seconds")
+    tic = time.time()
     # --- 9. Biases for Locations (if needed) ---
     bias = {a: 1.0 for a in A}
     bias['1/3 A-sal-1'] = 1.02
@@ -362,7 +440,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
             "expr": gp.quicksum(priority_order.get(e, 1) * (dt[ex, d, a] + 100*zt[ex, d, a])
                                 for e in E for ex in EXsubset[e]
                                 for d in D for a in A if (ex, d, a) in EDA),
-            "timelimit": 100,
+            "timelimit": 60,
             "constraints": [
                 # Require every session to be scheduled (for timeflex only)
                 #lambda model: model.addConstrs(
@@ -378,10 +456,16 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
             "constraints": [stayclose_constraint_fn],
             "sense": gp.GRB.MINIMIZE
         },
+        "before_after": {
+            "expr": gp.quicksum(zu[d,e1,e2] for (d, e1, e2) in DEE),
+            "timelimit": 60,
+            "constraints": [],
+            "sense": gp.GRB.MINIMIZE
+        },
         "default": {
             "expr": 100 * gp.quicksum(q[e, i] for e in E for i in range(len(D)))
                 + (1 / (len(EX))) * gp.quicksum(bias[a] * x[ex, d, a] for (ex, d, a) in EDA),
-            "timelimit": 100,
+            "timelimit": 60,
             "constraints": [],
             "sense": gp.GRB.MINIMIZE
         }
@@ -391,9 +475,12 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         #objective_order = ["stayclose", "timeflex",  "default"] # "feasibility",
         objective_order = ["stayclose", "timeflex"]
     else:
-        objective_order = ["timeflex",  "default"] # "feasibility",
+        objective_order = ["timeflex", "before_after", "default"] # "feasibility",
 
     added_constraints = []
+    toc = time.time()
+    print(f"10. Execution time: {toc - tic:.2f} seconds")
+
 
     for i, obj_name in enumerate(objective_order):
         print(f"Solving objective: {obj_name}")
