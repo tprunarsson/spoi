@@ -8,14 +8,33 @@ import json
 import datetime as datetime
 import time
 
+def round_time_to_nearest_5_minutes(t_str):
+    """Round a time string (HH:MM) to the nearest 5 minutes."""
+    try:
+        h, m = map(int, t_str.split(':'))
+        total = h * 60 + m
+        rounded = int(round(total / 5.0) * 5)
+        h_ = rounded // 60
+        m_ = rounded % 60
+        return f"{h_:02d}:{m_:02d}"
+    except Exception:
+        return t_str
+
+
 def save_solution(result_df, edited_df=None, solution_dir="sports/solutions"):
     os.makedirs(solution_dir, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"solution_{timestamp}.json"
     path = os.path.join(solution_dir, filename)
+
+    df_to_save = result_df.copy()
+    for col in ['Byrjun', 'Endir']:
+        if col in df_to_save.columns:
+            df_to_save[col] = df_to_save[col].apply(round_time_to_nearest_5_minutes)
+
     full_data = {
         "conditions": edited_df.to_dict(orient="records") if edited_df is not None else [],
-        "solution": result_df.to_dict(orient="records")
+        "solution": df_to_save.to_dict(orient="records")
     }
     with open(path, "w", encoding="utf-8") as f:
         json.dump(full_data, f, ensure_ascii=False, indent=2)
