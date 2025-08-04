@@ -8,7 +8,7 @@ import json
 import datetime as datetime
 import time
 
-def save_solution(result_df, edited_df=None, solution_dir="solutions"):
+def save_solution(result_df, edited_df=None, solution_dir="sports/solutions"):
     os.makedirs(solution_dir, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"solution_{timestamp}.json"
@@ -29,7 +29,7 @@ def list_solutions(solution_dir="sports/solutions"):
     files.sort(reverse=True)
     return files
 
-def load_solution(filename, solution_dir="solutions"):
+def load_solution(filename, solution_dir="sports/solutions"):
     path = os.path.join(solution_dir, filename)
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
@@ -301,22 +301,10 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
                 for a2 in valid_a2s:
                     EEDAA.append((e1, e2, d, a1, a2))
 
-    #model.addConstrs(
-    #    x[e1, d, a1] + DX[e1] <= x[e2, d, a2] + M * (1 - z[e1, d, a1]) + M * (1 - z[e2, d, a2]) + M * y[e1, e2]
-    #    for (e1, e2) in ExE for d in D
-    #    for a1 in ekki_deila_svaedi for a2 in ekki_deila_svaedi[a1]
-    #    if (e1, d, a1) in EDA and (e2, d, a2) in EDA
-    #)
     model.addConstrs(
         x[e1, d, a1] + DX[e1] <= x[e2, d, a2] + M * (1 - z[e1, d, a1]) + M * (1 - z[e2, d, a2]) + M * y[e1, e2]
         for (e1, e2, d, a1, a2) in EEDAA
     )
-    #model.addConstrs(
-    #    x[e2, d, a2] + DX[e2] <= x[e1, d, a1] + M * (1 - z[e1, d, a1]) + M * (1 - z[e2, d, a2]) + M * (1 - y[e1, e2])
-    #    for (e1, e2) in ExE for d in D
-    #    for a1 in ekki_deila_svaedi for a2 in ekki_deila_svaedi[a1]
-    #    if (e1, d, a1) in EDA and (e2, d, a2) in EDA
-    #)
     model.addConstrs(
         x[e2, d, a2] + DX[e2] <= x[e1, d, a1] + M * (1 - z[e1, d, a1]) + M * (1 - z[e2, d, a2]) + M * (1 - y[e1, e2])
         for (e1, e2, d, a1, a2) in EEDAA
@@ -362,7 +350,6 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         <= gp.quicksum(x[ex, d, a] for ex in EXsubset[e2] for a in A if (ex, d, a) in EDA)
         + M * (1 - gp.quicksum(z[ex, d, a] for ex in EXsubset[e1] for a in A if (ex, d, a) in EDA))
         + M * (1 - gp.quicksum(z[ex, d, a] for ex in EXsubset[e2] for a in A if (ex, d, a) in EDA))
-        #for d in D for e1 in undan_eftir for e2 in [undan_eftir[e1]]
         for (d, e1, e2) in DEE
     )
     model.addConstrs(
@@ -370,7 +357,6 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         >= gp.quicksum(x[ex, d, a] for ex in EXsubset[e2] for a in A if (ex, d, a) in EDA)
         - M * (1 - gp.quicksum(z[ex, d, a] for ex in EXsubset[e1] for a in A if (ex, d, a) in EDA))
         - M * (1 - gp.quicksum(z[ex, d, a] for ex in EXsubset[e2] for a in A if (ex, d, a) in EDA))
-        #for d in D for e1 in undan_eftir for e2 in [undan_eftir[e1]]
         for (d, e1, e2) in DEE
     )
 
@@ -475,8 +461,8 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         #objective_order = ["stayclose", "timeflex",  "default"] # "feasibility",
         objective_order = ["stayclose", "timeflex"]
     else:
-        objective_order = ["timeflex", "before_after", "default"] # "feasibility",
-
+        #objective_order = ["timeflex", "before_after", "default"] # "feasibility",
+        objective_order = ["before_after", "timeflex",  "default"]
     added_constraints = []
     toc = time.time()
     print(f"10. Execution time: {toc - tic:.2f} seconds")

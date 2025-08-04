@@ -26,6 +26,17 @@ def get_area_base(area):
 def force_calendar_redraw():
     st.session_state["calendar_update_ts"] = time.time()
 
+def col_included(col, row_dict):
+    value = row_dict.get(col, "")
+    # Skip NaN or empty values
+    if pd.isna(value) or value == "":
+        return False
+    # Skip Æfingarhópar if value is 1 or '1'
+    if col == "Æfingarhópar" and str(value).strip() == "1":
+        return False
+    return True
+
+
 st.set_page_config(page_title="Sports Timetable", layout="wide")
 
 # --- 1. Fetch and Prepare Data ---
@@ -41,9 +52,10 @@ def get_data(url):
         st.error(f"Failed to load the Google Sheet. Error: {e}")
         return pd.DataFrame()
 
-#df = get_data(SHEET_URL)
-_, df = load_solution(list_solutions()[0])
-
+try:
+    df = get_data(SHEET_URL)
+except Exception:
+    _, df = load_solution(list_solutions()[0])
 
 if 'editable_df' not in st.session_state:
     st.session_state['editable_df'] = df.copy()
@@ -117,9 +129,6 @@ with st.sidebar.expander("Veldu æfingar"):
 exercise_filter = selected_exercises
 
 
-#exercise_filter = st.sidebar.multiselect("Select exercise(s)", exercise_options, default=exercise_options)
-
-
 # --- 3. Editable Table (Always On Full Data) ---
 st.subheader("📋 Forsendur")
 edited_df = st.data_editor(
@@ -173,7 +182,7 @@ def run_optimization_thread(full_df, q, prev_soln=None):
 # --- 5. Buttons (Thread-Safe) ---
 col1, col2, col3 = st.columns([2,2,2])
 with col1:
-    if st.button("Besta"):
+    if st.button("Besta (threaded)"):
         if (st.session_state['opt_thread'] is not None 
             and st.session_state['opt_thread'].is_alive()):
             st.warning("Optimization is already running! Please wait or press 'Stop Gurobi' to stop.\n You may need to push the rfresh button below!")
@@ -189,12 +198,12 @@ with col1:
             thread.start()
             st.session_state['opt_thread'] = thread
             st.session_state['opt_running'] = True
-            st.info("Optimization started in the background. You can press 'Stop Gurobi' to stop.")
+            st.info("Optimization started in the background. You can press 'Stop Gurobi' to stop. Use refresh!")
 
 with col2:
-    if st.button("Stop Gurobi"):
+    if st.button("Stop Gurobi (kill-thread)"):
         st.session_state['kill_gurobi'] = True
-        st.info("Kill signal sent. The optimizer will stop soon (if running).")
+        st.info("Kill signal sent. The optimizer will stop soon (if running). Use refresh!")
 
 with col3:
     if st.button("Besta (non-threaded)"):
@@ -282,6 +291,7 @@ if display_df is not None:
         "locale": "is",
         "firstDay": 1,
         "editable": True,
+        "selectable": True,
         "eventDurationEditable": True,
         "eventStartEditable": True,
         "eventResizableFromStart": True,
@@ -304,9 +314,36 @@ if display_df is not None:
 else:
     calendar_return = None
 # Show tooltip on mouse hover using eventMouseEnter
+#if calendar_return and "eventMouseEnter" in calendar_return:
+#    event = calendar_return["eventMouseEnter"]["event"]
+#    st.toast(f"Æfing: {event.get('title')} ({event.get('start')} - {event.get('end')})", icon="💡")
+
+
 if calendar_return and "eventMouseEnter" in calendar_return:
     event = calendar_return["eventMouseEnter"]["event"]
-    st.toast(f"Æfing: {event.get('title')} ({event.get('start')} - {event.get('end')})", icon="💡")
+    df = st.session_state["editable_df"]
+
+    # Remove anything in parentheses and trim
+    base_name = re.sub(r"\s*\(.*\)$", "", event.get("title", "")).strip()
+
+    row = df[df["Æfing"] == base_name]
+    if not row.empty:
+        row_dict = row.iloc[0].to_dict()
+        columns_to_show = [
+            "Æfing", "Æfingarhópar", "fyrir/undan", "Salur/svæði",
+            "sun", "mán", "þri", "mið", "fim", "fös", "lau",
+            "Lengd", "LengdHelgar"
+ #           "Æfing", "Æfingarhópar", "fyrir/undan", "Salur/svæði",
+ #           "sun", "mán", "þri", "mið", "fim", "fös", "lau",
+ #           "Lengd", "LengdHelgar", "Tímabil byrjar", "tímabil endar", "Fjöldi iðkenda", "Priority"
+        ]
+        summary = " ".join(f"{col}: {row_dict.get(col, '')}" for col in columns_to_show if col_included(col, row_dict))
+    else:
+        summary = f"Æfing: {event.get('title')}, engar forsendur!"
+
+    st.toast(summary, icon="💡")
+
+
 
 # Handle calendar edits (drag-and-drop)
 if calendar_return and "eventChange" in calendar_return:
