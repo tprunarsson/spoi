@@ -20,7 +20,6 @@ def round_time_to_nearest_5_minutes(t_str):
     except Exception:
         return t_str
 
-
 def save_solution(result_df, edited_df=None, solution_dir="sports/solutions"):
     os.makedirs(solution_dir, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -80,12 +79,21 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     # 2. Extract Days and Area
     def extract_days(info):
         days_match = re.search(r'\(([^)]+)\)', info)
-        days = days_match.group(1).split('/') if days_match else None
+        if days_match:
+            # Split by comma, slash, or whitespace, then strip
+            days = re.split(r'[,/ ]+', days_match.group(1))
+            days = [d.strip() for d in days if d.strip()]
+        else:
+            days = None
         area = re.sub(r'\s*\(.*\)', '', info).strip()
         return area, days
 
+     # First, build area/day mapping per exercise
     svaedi_dagar_df = df[['Æfing','Salur/svæði']].explode('Salur/svæði').reset_index(drop=True)
-    svaedi_dagar_df[['Salur/svæði', 'Dagar']] = svaedi_dagar_df['Salur/svæði'].apply(lambda x: pd.Series(extract_days(x)))
+    svaedi_dagar_df[['Area', 'Days']] = svaedi_dagar_df['Salur/svæði'].apply(lambda x: pd.Series(extract_days(x)))
+
+    # Build a dict: (Æfing, Area) -> allowed days (list)
+    svaedi_dagar = svaedi_dagar_df.dropna(subset=['Days']).set_index(['Æfing', 'Area'])['Days'].to_dict()
     svaedi = set(svaedi_dagar_df['Salur/svæði'].str.strip())
     print(f"Debug: Unique areas extracted: {svaedi}")
     aefing = set(svaedi_dagar_df['Æfing'].str.strip())
@@ -94,8 +102,8 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     priority_order = dict(zip(df['Æfing'], df.get('Priority', [1]*len(df))))
 
     # 4. Model Dictionaries
-    svaedi_dagar_df = svaedi_dagar_df.dropna(subset=['Dagar'])
-    svaedi_dagar = svaedi_dagar_df.set_index(['Æfing', 'Salur/svæði'])['Dagar'].to_dict()
+    svaedi_dagar_df = svaedi_dagar_df.dropna(subset=['Days'])
+    svaedi_dagar = svaedi_dagar_df.set_index(['Æfing', 'Area'])['Days'].to_dict()
     svaedi_dagar = {key: [day.strip() for day in days] for key, days in svaedi_dagar.items()}
 
     undan_eftir_df = df[['Æfing','fyrir/undan']].reset_index(drop=True).dropna(subset=['fyrir/undan'])
@@ -172,27 +180,31 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     UB = {}
     LB = {}
     CX = {}
+
     for e in E:
         for d in D:
             for a in A:
-                if d in class_schedule[e] and a in e_a[e]:
-                    for ex in EXsubset[e]:
-                        if d in Dw and '*' in ex:
-                            EDA.append((ex, d, a))
-                        if d not in Dw and '*' not in ex:
-                            EDA.append((ex, d, a))
-                        UB[(ex, d, a)] = class_schedule[e][d][1]
-                        LB[(ex, d, a)] = class_schedule[e][d][0]
-                        if e in conflict_dict:
-                            tmp = [EXsubset[e_] for e_ in conflict_dict[e] if e_ in EXsubset]
-                            if tmp:
-                                CX[ex] = tmp[0]
+                allowed_days = svaedi_dagar.get((e, a))
+                # Only proceed if no restriction, or this day is allowed
+                if (allowed_days is None or d in allowed_days):
+                    if d in class_schedule[e] and a in e_a[e]:
+                        for ex in EXsubset[e]:
+                            if d in Dw and '*' in ex:
+                                EDA.append((ex, d, a))
+                            if d not in Dw and '*' not in ex:
+                                EDA.append((ex, d, a))
+                            UB[(ex, d, a)] = class_schedule[e][d][1]
+                            LB[(ex, d, a)] = class_schedule[e][d][0]
+                            if e in conflict_dict:
+                                tmp = [EXsubset[e_] for e_ in conflict_dict[e] if e_ in EXsubset]
+                                if tmp:
+                                    CX[ex] = tmp[0]
 
     ekki_deila_svaedi = {
         'A-sal': ['1/3 A-sal-1', '1/3 A-sal-2', '1/3 A-sal-3', '2/3 A-sal'],
         '2/3 A-sal': ['1/3 A-sal-1', '1/3 A-sal-2']
     }
-    #print(f"Debug: EDA: {EDA}")
+    print(f"Debug: EDA: {EDA}")
     # Build lookup dict for previous solution
     prev_assignment = {}
     mod_penalty = {}
