@@ -572,10 +572,12 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
                             'Salur/svæði': ABREV.get(a, a),
                             'Byrjun': f"{start_hour:02d}:{start_min:02d}",
                             'Endir': f"{end_hour:02d}:{end_min:02d}",
-                            'ViolatedWindow': violated_window
+                            'ViolatedWindow': violated_window,
+                            'Hluti': a,
+                            'Modified': False
                         }
                         records.append(record)
     result_df = pd.DataFrame(records)
-    for col in ['Dagur', 'Byrjun', 'Endir', 'Salur/svæði', 'Æfing']:
+    for col in ['Dagur', 'Byrjun', 'Endir', 'Salur/svæði', 'Hluti','Æfing', 'Modified']:
         result_df[col] = result_df[col].astype(str).str.strip()
     return result_df

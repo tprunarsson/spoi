@@ -152,8 +152,8 @@ def timetable_to_events_(df):
             "end": end_dt.isoformat(),
             "resourceId": area_abbr,
             "backgroundColor": (
-                "#D32F2F" if row.get("ViolatedWindow", False)
-                else "#4CAF50" if row.get('Modified', False)
+                "#D32F2F" if row.get("ViolatedWindow", False) is True
+                else "#4CAF50" if row.get('Modified', False) is True
                 else "#1976D2"
             )
         }
