@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from streamlit_calendar import calendar
 from sports_ui import timetable_to_events_, update_df_from_events
-from sports_optimizer_gurobi import run_gurobi_optimization #, save_solution, load_solution, list_solutions
+from sports_optimizer_gurobi import run_gurobi_optimization
 from sports_optimizer_scip import run_scip_optimization, save_solution, load_solution, list_solutions
 import threading
 import queue
@@ -13,6 +13,11 @@ from collections import defaultdict
 import time
 from st_aggrid import AgGrid, GridOptionsBuilder
 from streamlit_tags import st_tags
+
+# === NEW: auth imports ===
+import streamlit_authenticator as stauth
+import yaml
+from yaml.loader import SafeLoader
 
 # --- Abbreviations mapping (must match optimizer!) ---
 ABBREV = {
@@ -52,7 +57,59 @@ def iso_to_hhmm(s):
     except Exception:
         return s
 
-st.set_page_config(page_title="Sports Timetable", layout="wide")
+# === IMPORTANT: set page config once, up top ===
+st.set_page_config(page_title="Sports Timetable", layout="wide", page_icon="🏋️")
+
+# =========================
+# AUTH BLOCK (runs first)
+# =========================
+def require_login():
+    # Load credentials
+    try:
+        with open("sports/config.yaml") as f:
+            config = yaml.load(f, Loader=SafeLoader)
+    except Exception as e:
+        st.error("Could not load config.yaml for authentication.")
+        st.stop()
+
+    authenticator = stauth.Authenticate(
+        config["credentials"],
+        config["cookie"]["name"],
+        config["cookie"]["key"],
+        config["cookie"]["expiry_days"],
+        # auto_hash=True  # leave default off if you already store hashed passwords
+    )
+
+    # Nice header area for auth
+    with st.sidebar:
+        st.markdown("### 🔐 Innskráning")
+        try:
+            authenticator.login(location="sidebar", key="Login")
+        except Exception as e:
+            st.error(e)
+
+        # Optional: show logout if logged in
+        if st.session_state.get("authentication_status"):
+            st.success(f"Skráður inn sem **{st.session_state.get('name')}**")
+            authenticator.logout(location="sidebar", key="Logout")
+
+    # Gate the rest of the app
+    auth_status = st.session_state.get("authentication_status", None)
+    if auth_status is True:
+        return True
+    elif auth_status is False:
+        st.error("Rangt notandanafn eða lykilorð.")
+        st.stop()
+    else:
+        st.info("Vinsamlegast skráðu þig inn í hliðarslá.")
+        st.stop()
+
+# Call it before any app logic
+require_login()
+
+# =========================
+# Your existing app starts
+# =========================
 
 # --- 1. Fetch and Prepare Data ---
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1B91Ez1iHNW7f0AVKJwURqHhq-vQF3b4F2e-1HcDO2wM/export?format=csv&gid=0"
@@ -118,9 +175,7 @@ for area in all_areas:
     abbr_to_full[abbr].append(area)
 
 room_options = sorted(abbr_to_full.keys())
-room_labels = [
-    f"{abbr} ({', '.join(abbr_to_full[abbr])})" for abbr in room_options
-]
+room_labels = [f"{abbr} ({', '.join(abbr_to_full[abbr])})" for abbr in room_options]
 room_label_to_abbr = dict(zip(room_labels, room_options))
 
 with st.sidebar.expander("Veldu svæði"):
@@ -291,17 +346,10 @@ if display_df is not None:
     ].copy()
 
 # --- 9. Calendar Display (Filtered) ---
-
-    # Ensure your timetable_to_events creates events with "resourceId" = area abbreviation!
     events = timetable_to_events_(filtered_display_df)
 
     st.subheader("📅 Æfingatafla")
-    # --- VIEW SELECTOR ---
-    view = st.radio(
-        "Veldu sýn:",
-        ["Week", "Resource"],
-        horizontal=True
-    )
+    view = st.radio("Veldu sýn:", ["Week", "Resource"], horizontal=True)
     if view == "Week":
         calendar_options = {
             "initialView": "timeGridWeek",
@@ -352,10 +400,6 @@ if display_df is not None:
 else:
     calendar_return = None
 
-#st.write("Resources:", resources)
-#st.write("Sample event:", events[0] if events else "No events")
-
-
 if calendar_return and "eventMouseEnter" in calendar_return:
     event = calendar_return["eventMouseEnter"]["event"]
     df = st.session_state["editable_df"]
@@ -374,37 +418,27 @@ if calendar_return and "eventMouseEnter" in calendar_return:
     st.toast(summary, icon="💡")
 
 if calendar_return and "eventChange" in calendar_return:
-
     changed_event = calendar_return["eventChange"]["event"]
     st.write("Changed event object from calendar:", changed_event)
 
-    # Find the old event row in display_df (before update)
     event_id = changed_event.get("id")
-
-    
     before_row = display_df[display_df["EventID"] == event_id]
     print("Before update:", before_row.to_string(index=False))
 
     if event_id is not None:
-        # Try to match by EventID as string (or adjust for your unique identifier)
         old_row = display_df[display_df["EventID"] == str(event_id)]
         if not old_row.empty:
             old_event = old_row.iloc[0].to_dict()
-            print("Old event dict from DataFrame:", old_event)
-            print("New (changed) event dict from calendar:", changed_event)
-            # Build a comparison: list what changed
             changes = []
             for cal_key, df_key in calendar_to_df.items():
                 cal_val = changed_event.get(cal_key)
                 df_val = old_event.get(df_key)
                 if cal_key in ("start", "end"):
                     cal_val = iso_to_hhmm(cal_val)
-                # Fix: Ignore missing resourceId in calendar event (don't treat None as a change)
                 if cal_key == "resourceId" and (cal_val is None or str(cal_val).lower() in ("", "none", "nan")):
                     continue
                 if str(cal_val) != str(df_val):
                     changes.append(f"**{df_key}**: '{df_val}' → '{cal_val}'")
-
             if changes:
                 print("**Changed fields:**\n" + "\n".join(changes))
             else:
@@ -414,14 +448,10 @@ if calendar_return and "eventChange" in calendar_return:
     else:
         print("Warning:No 'id' found in changed event!")
 
-
-
     changed_event = calendar_return["eventChange"]["event"]
     st.success(f"Calendar edit received for event ID: {changed_event['id']}")
     updated_events = [changed_event]
     display_df = update_df_from_events(display_df, updated_events)
-    # Set the Modified flag to True for the changed event
-    event_id = changed_event.get("id")
     if event_id is not None and "Modified" in display_df.columns:
         display_df.loc[display_df["EventID"] == str(event_id), "Modified"] = True
 
@@ -458,12 +488,6 @@ if filtered_display_df is not None and not filtered_display_df.empty:
     gb.configure_default_column(sortable=True, filter=True, resizable=True)
     gb.configure_grid_options(enableExporting=True)
     grid_options = gb.build()
-    #AgGrid(
-    #    display_df_cleaned.reset_index(drop=True),
-    #    gridOptions=grid_options,
-    #    fit_columns_on_grid_load=True,
-    #    theme="streamlit",
-    #)
     response = AgGrid(
         display_df_cleaned.reset_index(drop=True),
         gridOptions=grid_options,
@@ -474,7 +498,6 @@ if filtered_display_df is not None and not filtered_display_df.empty:
     )
     aggrid_df = pd.DataFrame(response['data'])
 
-    # Now add a download button for aggrid_df (the possibly filtered data)
     excel_buf = io.BytesIO()
     aggrid_df.to_excel(excel_buf, index=False)
     excel_buf.seek(0)
@@ -485,7 +508,6 @@ if filtered_display_df is not None and not filtered_display_df.empty:
         file_name="timetable_filtered.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
 
 if st.button("Refresh"):
     st.rerun()
