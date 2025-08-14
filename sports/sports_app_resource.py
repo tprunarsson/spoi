@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 from streamlit_calendar import calendar
 from sports_ui import timetable_to_events_, update_df_from_events
-from sports_optimizer import run_gurobi_optimization, save_solution, load_solution, list_solutions
+from sports_optimizer_gurobi import run_gurobi_optimization #, save_solution, load_solution, list_solutions
+from sports_optimizer_scip import run_scip_optimization, save_solution, load_solution, list_solutions
 import threading
 import queue
 import re
@@ -194,36 +195,35 @@ def run_optimization_thread(full_df, q, prev_soln=None):
         q.put(e)
 
 # --- 5. Buttons (Thread-Safe) ---
-col1, col2, col3 = st.columns([2,2,2])
+col1, col2 = st.columns([2,2])
+
 with col1:
-    if st.button("Besta (threaded)"):
-        if (st.session_state['opt_thread'] is not None 
-            and st.session_state['opt_thread'].is_alive()):
-            st.warning("Optimization is already running! Please wait or press 'Stop Gurobi' to stop.\n You may need to push the rfresh button below!")
-        else:
-            st.session_state['kill_gurobi'] = False
-            st.session_state["opt_result"] = None
-            st.session_state['opt_queue'] = queue.Queue()
-            thread = threading.Thread(
-                target=run_optimization_thread, 
-                args=(edited_df.copy(), st.session_state['opt_queue'], display_df.copy())
-            )
-            thread.daemon = True
-            thread.start()
-            st.session_state['opt_thread'] = thread
-            st.session_state['opt_running'] = True
-            st.info("Optimization started in the background. You can press 'Stop Gurobi' to stop. Use refresh!")
-
-with col2:
-    if st.button("Stop Gurobi (kill-thread)"):
-        st.session_state['kill_gurobi'] = True
-        st.info("Kill signal sent. The optimizer will stop soon (if running). Use refresh!")
-
-with col3:
-    if st.button("Besta (non-threaded)"):
+    if st.button("Besta (Gurobi)"):
         st.session_state['kill_gurobi'] = False
         prev_soln = display_df.copy() if display_df is not None else None
-        result_df = run_gurobi_optimization(edited_df.copy(), kill_callback=None, prev_soln=prev_soln)
+        result_df = run_gurobi_optimization(edited_df.copy(), kill_callback=None, prev_soln=None)
+        if prev_soln is not None and 'Modified' in prev_soln.columns:
+            result_df['Modified'] = result_df.apply(
+                lambda row: prev_soln[
+                    (prev_soln['Æfing'] == row['Æfing']) &
+                    (prev_soln['Dagur'] == row['Dagur']) &
+                    (prev_soln['Salur/svæði'] == row['Salur/svæði'])
+                ]['Modified'].values[0]
+                if not prev_soln[
+                    (prev_soln['Æfing'] == row['Æfing']) &
+                    (prev_soln['Dagur'] == row['Dagur']) &
+                    (prev_soln['Salur/svæði'] == row['Salur/svæði'])
+                ].empty else False,
+                axis=1
+            )
+        st.session_state["opt_result"] = result_df
+        st.info("Optimization complete!")
+
+with col2:
+    if st.button("Besta (SCIP)"):
+        st.session_state['kill_gurobi'] = False
+        prev_soln = display_df.copy() if display_df is not None else None
+        result_df = run_scip_optimization(edited_df.copy(), kill_callback=None, prev_soln=None)
         if prev_soln is not None and 'Modified' in prev_soln.columns:
             result_df['Modified'] = result_df.apply(
                 lambda row: prev_soln[

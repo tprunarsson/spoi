@@ -7,6 +7,7 @@ import os
 import json
 import datetime as datetime
 import time
+from collections import defaultdict
 
 def round_time_to_nearest_5_minutes(t_str):
     """Round a time string (HH:MM) to the nearest 5 minutes."""
@@ -229,7 +230,6 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
                     key = (ex, d)
                     if modified:
                         modifiedEDA.append(key)
-                    if key in EDA:
                         prev_assignment[key] = start_minutes
                         mod_penalty[key] = penalty
         print(modifiedEDA)
@@ -247,14 +247,13 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     M = 24 * 60
     ExE = {(EX[i], EX[j]) for i in range(len(EX)) for j in range(len(EX)) if i != j}
     y = model.addVars(ExE, vtype="B", name='y')
-    q = model.addVars(E, range(len(D)), name='q')
+    q = model.addVars(E, range(len(D)), ub=1.0, name='q')
     #c = model.addVars(EDA, vtype="B", name='c')
-    dt = model.addVars(EDA, name='dt') # new time flex strategy 
+    dt = model.addVars(EDA, ub=120.0, name='dt') # new time flex strategy 
     delta_prev = model.addVars(prev_assignment.keys(), name="delta_prev")  # deviation from previous start
     zt = model.addVars(EDA, vtype="B", name='zt') # new time flex strategy
     toc = time.time()
     print(f"1. Execution time: {toc - tic:.2f} seconds")
-
 
     # --- 2. Time and Activation Constraints ---
     tic = time.time()
@@ -281,8 +280,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     # --- 3. Overlap Constraints (no overlap at same location) ---
     tic = time.time()
     #EEDA = [(e1,e2,d,a) for (e1, e2) in ExE for d in D for a in A if (e1, d, a) in EDA and (e2, d, a) in EDA]
-    from collections import defaultdict
-
+    
     eda_by_ex = defaultdict(set)
     for ex, d, a in EDA:
         eda_by_ex[ex].add((d, a))
@@ -293,20 +291,10 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         for d, a in shared_day_areas:
             EEDA.append((e1, e2, d, a))
 
-    #model.addConstrs(
-    #    x[e1, d, a] + DX[e1] <= x[e2, d, a] + M * (1 - z[e1, d, a]) + M * (1 - z[e2, d, a]) + M * y[e1, e2]
-    #    for (e1, e2) in ExE for d in D for a in A
-    #    if (e1, d, a) in EDA and (e2, d, a) in EDA
-    #)
     model.addConstrs(
         x[e1, d, a] + DX[e1] <= x[e2, d, a] + M * (1 - z[e1, d, a]) + M * (1 - z[e2, d, a]) + M * y[e1, e2]
         for (e1, e2, d, a) in EEDA
     )
-    #model.addConstrs(
-    #    x[e2, d, a] + DX[e2] <= x[e1, d, a] + M * (1 - z[e1, d, a]) + M * (1 - z[e2, d, a]) + M * (1 - y[e1, e2])
-    #    for (e1, e2) in ExE for d in D for a in A
-    #    if (e1, d, a) in EDA and (e2, d, a) in EDA
-    #)
     model.addConstrs(
         x[e2, d, a] + DX[e2] <= x[e1, d, a] + M * (1 - z[e1, d, a]) + M * (1 - z[e2, d, a]) + M * (1 - y[e1, e2])
         for (e1, e2, d, a) in EEDA
@@ -316,7 +304,6 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     tic = time.time()
     # --- 4. Overlap Constraints for Shared Areas (ekki_deila_svaedi) ---
     #EEDAA = [(e1,e2,d,a1,a2) for (e1, e2) in ExE for d in D for a1 in ekki_deila_svaedi for a2 in ekki_deila_svaedi[a1] if (e1, d, a1) in EDA and (e2, d, a2) in EDA]
-    from collections import defaultdict
 
     # Index EDA by (ex, d)
     eda_by_ex_day = defaultdict(set)
@@ -345,14 +332,14 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     print(f"4. Execution time: {toc - tic:.2f} seconds")
 
     # --- 5. Conflict Constraints (Árekstur) ---
-
+    """
     model.addConstrs(
         gp.quicksum(x[e1, d, a] for a in A if (e1, d, a) in EDA) + DX[e1]
         <= gp.quicksum(x[e2, d, a] for a in A if (e2, d, a) in EDA)
         + M * (1 - gp.quicksum(z[e1, d, a] for a in A if (e1, d, a) in EDA))
         + M * (1 - gp.quicksum(z[e2, d, a] for a in A if (e2, d, a) in EDA))
         + M * y[e1, e2]
-        for e1 in CX for e2 in CX[e1] for d in D if e1 in DX
+        for e1 in CX for e2 in CX[e1] for d in D
     )
     model.addConstrs(
         gp.quicksum(x[e2, d, a] for a in A if (e2, d, a) in EDA) + DX[e2]
@@ -360,11 +347,12 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         + M * (1 - gp.quicksum(z[e1, d, a] for a in A if (e1, d, a) in EDA))
         + M * (1 - gp.quicksum(z[e2, d, a] for a in A if (e2, d, a) in EDA))
         + M * (1 - y[e1, e2])
-        for e1 in CX for e2 in CX[e1] for d in D if e2 in DX
+        for e1 in CX for e2 in CX[e1] for d in D
     )
     toc = time.time()
     print(f"5. Execution time: {toc - tic:.2f} seconds")
     tic = time.time()
+    """
     # --- 6. Legal Days for Area/Exercise (svaedi_dagar) ---
 
     model.addConstrs(
@@ -481,7 +469,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         },
         "default": {
             "expr": 100 * gp.quicksum(q[e, i] for e in E for i in range(len(D)))
-                + (1 / (len(EX))) * gp.quicksum(bias[a] * x[ex, d, a] for (ex, d, a) in EDA),
+                + (1 / (max(1, len(EX)))) * gp.quicksum(bias[a] * x[ex, d, a] for (ex, d, a) in EDA),
             "timelimit": 60,
             "constraints": [],
             "sense": gp.GRB.MINIMIZE
@@ -494,10 +482,10 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     else:
         #objective_order = ["timeflex", "before_after", "default"] # "feasibility",
         objective_order = ["before_after", "timeflex",  "default"]
+    # objective_order = ["timeflex"]
     added_constraints = []
     toc = time.time()
     print(f"10. Execution time: {toc - tic:.2f} seconds")
-
 
     for i, obj_name in enumerate(objective_order):
         print(f"Solving objective: {obj_name}")
@@ -528,16 +516,6 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
         else:
             print(f"Warning: {obj_name} not solved to optimality.")
 
-        # Remove constraints ONLY if not on the last iteration
-        #if i < len(objective_order) - 1:
-        #    for constr_group in added_constraints:
-        #        if hasattr(constr_group, "values"):
-        #            for c in constr_group.values():
-        #                model.remove(c)
-        #        else:
-        #            model.remove(constr_group)
-        #    model.update()
-
 
     # --------------- Build Output DataFrame for Display/Calendar ---------------
     # Abbreviations for fields
@@ -556,8 +534,8 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
                 for ex in EXsubset[e]:
                     key = (ex, d, a)
                     if key in EDA and z[ex, d, a].X > 0.1:
-                        start = x[ex, d, a].X
-                        duration = DX[ex]
+                        start = int(np.round(x[ex, d, a].X))
+                        duration = int(DX[ex])
                         end = start + duration
                         start_hour = int(start // 60)
                         start_min = int(start % 60)
@@ -580,4 +558,20 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
     result_df = pd.DataFrame(records)
     for col in ['Dagur', 'Byrjun', 'Endir', 'Salur/svæði', 'Hluti','Æfing', 'Modified']:
         result_df[col] = result_df[col].astype(str).str.strip()
+    def clean_time_str(t):
+        s = str(t).strip()
+        # Remove single or double quotes around the value
+        if re.fullmatch(r"['\"].*['\"]", s):
+            s = s[1:-1]
+        # Normalize invalid times like HH:60 → (HH+1):00
+        if re.fullmatch(r"\d{2}:\d{2}", s):
+            hh, mm = map(int, s.split(":"))
+            if mm == 60:
+                hh = (hh + 1) % 24
+                mm = 0
+            s = f"{hh:02d}:{mm:02d}"
+        return s
+
+    for col in ["Byrjun", "Endir"]:
+        result_df[col] = result_df[col].apply(clean_time_str)
     return result_df
