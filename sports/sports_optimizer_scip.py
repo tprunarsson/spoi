@@ -21,7 +21,7 @@ def round_time_to_nearest_5_minutes(t_str):
     except Exception:
         return t_str
 
-def save_solution(result_df, edited_df=None, solution_dir="sports/solutions"):
+def save_solution(result_df, edited_df=None, solution_dir="solutions"):
     os.makedirs(solution_dir, exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"solution_{timestamp}.json"
@@ -41,14 +41,14 @@ def save_solution(result_df, edited_df=None, solution_dir="sports/solutions"):
 
     return path
 
-def list_solutions(solution_dir="sports/solutions"):
+def list_solutions(solution_dir="solutions"):
     if not os.path.exists(solution_dir):
         return []
     files = [f for f in os.listdir(solution_dir) if f.endswith('.json')]
     files.sort(reverse=True)
     return files
 
-def load_solution(filename, solution_dir="sports/solutions"):
+def load_solution(filename, solution_dir="solutions"):
     path = os.path.join(solution_dir, filename)
     with open(path, encoding="utf-8") as f:
         data = json.load(f)

@@ -13,6 +13,7 @@ from collections import defaultdict
 import time
 from st_aggrid import AgGrid, GridOptionsBuilder
 from streamlit_tags import st_tags
+from pathlib import Path
 
 # === NEW: auth imports ===
 import streamlit_authenticator as stauth
@@ -56,6 +57,14 @@ def iso_to_hhmm(s):
         return t.strftime("%H:%M")
     except Exception:
         return s
+    
+def _get_user_solution_dir(base_dir="solutions"):
+    username = st.session_state.get("username")
+    if not username:
+        raise ValueError("No username found in session_state. User must be logged in.")
+    user_dir = Path(base_dir) / username
+    user_dir.mkdir(parents=True, exist_ok=True)
+    return user_dir
 
 # === IMPORTANT: set page config once, up top ===
 st.set_page_config(page_title="Sports Timetable", layout="wide", page_icon="🏋️")
@@ -66,7 +75,7 @@ st.set_page_config(page_title="Sports Timetable", layout="wide", page_icon="🏋
 def require_login():
     # Load credentials
     try:
-        with open("sports/config.yaml") as f:
+        with open("config.yaml") as f:
             config = yaml.load(f, Loader=SafeLoader)
     except Exception as e:
         st.error("Could not load config.yaml for authentication.")
@@ -127,7 +136,7 @@ def get_data(url):
 try:
     df = get_data(SHEET_URL)
 except Exception:
-    _, df = load_solution(list_solutions()[0])
+    _, df = load_solution(list_solutions(_get_user_solution_dir())[0],_get_user_solution_dir())
 
 if 'editable_df' not in st.session_state:
     st.session_state['editable_df'] = df.copy()
@@ -140,13 +149,14 @@ if df.empty or not required_cols.issubset(df.columns):
 if 'editor_version' not in st.session_state:
     st.session_state['editor_version'] = 0
 
+
 # --- 2. Sidebar Filters (pretty labels, abbreviation logic) ---
 with st.sidebar.expander("🔄 Opna Solution"):
-    files = list_solutions()
+    files = list_solutions(_get_user_solution_dir())
     if files:
         selected_file = st.selectbox("Select solution file", files)
         if st.button("Load Solution"):
-            loaded_df, editable_df = load_solution(selected_file)
+            loaded_df, editable_df = load_solution(selected_file,_get_user_solution_dir())
             if loaded_df is not None and "Modified" not in loaded_df.columns:
                 loaded_df["Modified"] = False
             st.session_state['opt_result'] = loaded_df
@@ -332,7 +342,7 @@ if display_df is not None:
 
 if "opt_result" in st.session_state and st.session_state["opt_result"] is not None:
     if st.button("💾 Vista lausn"):
-        save_path = save_solution(st.session_state["opt_result"], st.session_state['editable_df'])
+        save_path = save_solution(st.session_state["opt_result"], st.session_state['editable_df'], _get_user_solution_dir())
         st.success(f"Solution saved to: {save_path}")
 
 # --- 8. Filtering for Visualization (calendar/table) ---

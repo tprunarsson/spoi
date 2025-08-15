@@ -8,6 +8,17 @@ import json
 import datetime as datetime
 import time
 from collections import defaultdict
+from dotenv import load_dotenv
+
+# Load variables from .env
+load_dotenv()
+
+options = {
+    "WLSACCESSID": os.getenv("GRB_WLSACCESSID"),
+    "WLSSECRET": os.getenv("GRB_WLSSECRET"),
+    "LICENSEID": int(os.getenv("GRB_LICENSEID")),
+    "TimeLimit": 60 * 3
+}
 
 def round_time_to_nearest_5_minutes(t_str):
     """Round a time string (HH:MM) to the nearest 5 minutes."""
@@ -237,7 +248,7 @@ def run_gurobi_optimization(df: pd.DataFrame, kill_callback=None, prev_soln=None
 
 
     # --- 1. Model Setup ---
-    model = gp.Model()
+    model = gp.Model(env=gp.Env(params=options))
     tic = time.time()
     # Decision variables
     x = model.addVars(EDA, ub=UB, name='x')
