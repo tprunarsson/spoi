@@ -21,9 +21,17 @@ Spói helps universities and colleges efficiently schedule courses, allocate roo
 - Support for interactive, chat-based timetable adjustment
 
 ---
-
 <img src="https://github.com/tprunarsson/spoi/blob/main/images/spoi.png?raw=true" width="60"/>
 
 **Spói** is named after the Icelandic word for the Whimbrel, a migratory bird celebrated for its adaptability and clarity — reflecting our mission to make academic scheduling transparent, flexible, and collaborative.
 
 ---
+
+## License
+
+This project is licensed under the **Apache License, Version 2.0**.  
+You may use the software commercially, modify it, distribute it, and build proprietary systems on top of it under the terms of the license.
+
+See the [`LICENSE`](./LICENSE) file for the full license text.  
+A supplementary [`NOTICE`](./NOTICE) file is included as required by the Apache 2.0 license.
+
