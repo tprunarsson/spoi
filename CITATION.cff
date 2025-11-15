@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+title: "Spói: Scheduling Planning Optimization Interface"
+message: "If you use Spói in your research, teaching, or publications, please cite this project."
+authors:
+  - family-names: "University of Iceland"
+    name: "University of Iceland"
+version: "0.1.0"
+date-released: "2025-01-01"
+repository-code: "https://github.com/tprunarsson/spoi"
+abstract: |
+  Spói is an open-source framework for interactive timetabling and 
+  optimization, designed to support complex university course scheduling 
+  through a modular, OOAPI-aligned data model and both automated and 
+  human-in-the-loop scheduling workflows.
+keywords:
+  - timetabling
+  - optimization
+  - scheduling
+  - OOAPI
+  - university scheduling
+  - MIP
+  - resource allocation
+license: "Apache-2.0"
+preferred-citation:
+  type: software
+  title: "Spói: Scheduling Planning Optimization Interface"
+  authors:
+    - family-names: "University of Iceland"
+      name: "University of Iceland"
+  year: 2025
+  url: "https://github.com/tprunarsson/spoi"
